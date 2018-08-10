@@ -1,0 +1,16 @@
+#! /bin/bash
+
+echo "# First test"
+echo "first_test{label=\"test_1_label_1\"} 1"
+echo ""
+echo "# Second test"
+echo "second_test{label=\"test_2_label_1\",label=\"test_2_label_2\"} 2.71828182846"
+echo ""
+echo "# Third test"
+echo "third_test{} 3,14159265359"
+echo ""
+echo "Fourth test"
+echo "fourth label=\"test_1_label_1\ 4"
+echo ""
+echo "Fifth test"
+echo "fifth 5"
