@@ -56,18 +56,14 @@ Usage of ./bin/script_exporter:
     	Configuration file in YAML format. (default "config.yaml")
   -config.shell string
     	Shell to execute script (default "/bin/sh")
+  -create-token
+    	Create bearer token for authentication.
   -version
     	Show version information.
   -web.listen-address string
     	Address to listen on for web interface and telemetry. (default ":9469")
   -web.telemetry-path string
     	Path under which to expose metrics. (default "/metrics")
-  -web.tls
-    	Use tls
-  -web.tls-crt string
-    	Signed certificate, needed if web.tls = true (default "server.crt")
-  -web.tls-key string
-    	Private key, needed if web.tls = true (default "server.key")
 ```
 
 The configuration file is written in YAML format, defined by the scheme described below.
