@@ -62,6 +62,12 @@ Usage of ./bin/script_exporter:
     	Address to listen on for web interface and telemetry. (default ":9469")
   -web.telemetry-path string
     	Path under which to expose metrics. (default "/metrics")
+  -web.tls
+    	Use tls
+  -web.tls-crt string
+    	Signed certificate, needed if web.tls = true (default "server.crt")
+  -web.tls-key string
+    	Private key, needed if web.tls = true (default "server.key")
 ```
 
 The configuration file is written in YAML format, defined by the scheme described below.
