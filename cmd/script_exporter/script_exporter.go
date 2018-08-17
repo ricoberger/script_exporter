@@ -29,6 +29,9 @@ var (
 
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	useTLS        = flag.Bool("web.tls", false, "Use tls")
+	tlsCrt        = flag.String("web.tls-crt", "server.crt", "Signed certificate, needed if web.tls = true")
+	tlsKey        = flag.String("web.tls-key", "server.key", "Private key, needed if web.tls = true")
 	showVersion   = flag.Bool("version", false, "Show version information.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
 	shell         = flag.String("config.shell", "/bin/sh", "Shell to execute script")
@@ -164,5 +167,9 @@ func main() {
 		</html>`))
 	})
 
-	log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+	if *useTLS == true {
+		log.Fatalln(http.ListenAndServeTLS(*listenAddress, *tlsCrt, *tlsKey, nil))
+	} else {
+		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+	}
 }
