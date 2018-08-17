@@ -14,7 +14,8 @@ func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFu
 
 func auth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if *useBasicAuth == true {
+		// Basic authentication
+		if exporterConfig.BasicAuth.Active == true {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 
 			username, password, authOK := r.BasicAuth()
@@ -23,7 +24,7 @@ func auth(h http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			if username != *basicAuthUsername || password != *basicAuthPassword {
+			if username != exporterConfig.BasicAuth.Username || password != exporterConfig.BasicAuth.Password {
 				http.Error(w, "Not authorized", 401)
 				return
 			}

@@ -27,17 +27,11 @@ const (
 var (
 	exporterConfig config.Config
 
-	listenAddress     = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
-	metricsPath       = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	useTLS            = flag.Bool("web.tls", false, "Use tls")
-	tlsCrt            = flag.String("web.tls-crt", "server.crt", "Signed certificate, needed if web.tls = true")
-	tlsKey            = flag.String("web.tls-key", "server.key", "Private key, needed if web.tls = true")
-	useBasicAuth      = flag.Bool("web.auth.basic", false, "Use basic authentication")
-	basicAuthUsername = flag.String("web.auth.basic-username", "admin", "Username for basic authentication, needed if web.auth.basic = true")
-	basicAuthPassword = flag.String("web.auth.basic-password", "admin", "Password for basic authentication, needed if web.auth.basic = true")
-	showVersion       = flag.Bool("version", false, "Show version information.")
-	configFile        = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
-	shell             = flag.String("config.shell", "/bin/sh", "Shell to execute script")
+	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
+	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	showVersion   = flag.Bool("version", false, "Show version information.")
+	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
+	shell         = flag.String("config.shell", "/bin/sh", "Shell to execute script")
 )
 
 func runScript(args []string) (string, error) {
@@ -170,8 +164,8 @@ func main() {
 		</html>`))
 	}, auth))
 
-	if *useTLS == true {
-		log.Fatalln(http.ListenAndServeTLS(*listenAddress, *tlsCrt, *tlsKey, nil))
+	if exporterConfig.TLS.Active == true {
+		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))
 	} else {
 		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
 	}

@@ -1,3 +1,13 @@
+tls:
+  active: false
+  crt: server.cert
+  key: server.key
+
+basicAuth:
+  active: false
+  username: admin
+  password: admin
+
 scripts:
   - name: test
     script: ./examples/test.sh
