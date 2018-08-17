@@ -44,6 +44,8 @@ test_second_test{label="test_2_label_1",label="test_2_label_2"} 2.71828182846
 test_third_test{} 3.14159265359
 ```
 
+You can also visit the following url for a more complex example. The `ping` example uses the `params` parameter to check if a `target` is reachable: [http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com](http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com)
+
 ## Usage and configuration
 
 The script exporter is configured via a configuration file and command-line flags.
