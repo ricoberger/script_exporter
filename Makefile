@@ -4,7 +4,7 @@ VERSION=`git describe --tags`
 COMMIT=`git rev-parse HEAD`
 BUILDUSER := $(shell id -un)
 
-.PHONY: build build-darwin-amd64 build-linux-amd64 build-windows-amd64
+.PHONY: build build-darwin-amd64 build-linux-amd64 build-windows-amd64 release
 
 build:
 	for target in $(WHAT); do \
@@ -41,3 +41,5 @@ build-windows-amd64:
 			-X github.com/ricoberger/script_exporter/pkg/version.BuildUser=${BUILDUSER}" \
 			-o ./bin/$$target-${VERSION}-windows-amd64.exe ./cmd/$$target; \
 	done
+
+release: build-darwin-amd64 build-linux-amd64 build-windows-amd64

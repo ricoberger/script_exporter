@@ -1,3 +1,5 @@
 scripts:
   - name: test
     script: ./examples/test.sh
+  - name: ping
+    script: ./examples/ping.sh

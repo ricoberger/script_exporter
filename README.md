@@ -24,18 +24,27 @@ Running:
 ./bin/script_exporter
 ```
 
-Then visit [http://localhost:9469/metrics?script=test](http://localhost:9469/metrics?script=test) in the browser of your choice. There you should see the following output:
+Then visit [http://localhost:9469/metrics?script=test&prefix=test](http://localhost:9469/metrics?script=test&prefix=test) in the browser of your choice. There you should see the following output:
 
 ```
-test_success{} 1
-test_duration_seconds{} 0.005626
-# First test
+# HELP script_success Script exit status (0 = error, 1 = success).
+# TYPE script_success gauge
+script_success{} 1
+# HELP script_duration_seconds Script execution time, in seconds.
+# TYPE script_duration_seconds gauge
+script_duration_seconds{} 0.006133
+# HELP test_first_test
+# TYPE test_first_test gauge
 test_first_test{label="test_1_label_1"} 1
-# Second test
+# HELP test_second_test
+# TYPE test_second_test gauge
 test_second_test{label="test_2_label_1",label="test_2_label_2"} 2.71828182846
-# Third test
+# HELP test_third_test
+# TYPE test_third_test gauge
 test_third_test{} 3.14159265359
 ```
+
+You can also visit the following url for a more complex example. The `ping` example uses the `params` parameter to check if a `target` is reachable: [http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com](http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com)
 
 ## Usage and configuration
 
@@ -68,7 +77,7 @@ script: <string>
 
 ## Prometheus configuration
 
-The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix. If the `prefix` parameter is missing `script` will be used as prefix.
+The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`).
 
 Example config:
 
@@ -85,6 +94,26 @@ scrape_configs:
     relabel_configs:
       - target_label: script
         replacement: test
+  - job_name: 'script_ping'
+    scrape_interval: 1m
+    scrape_timeout: 30s
+    metrics_path: /metrics
+    params:
+      script: [ping]
+      prefix: [script_ping]
+      params: [target]
+    static_configs:
+      - targets:
+        - example.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9469
+      - source_labels: [__param_target]
+        target_label: target
+      - source_labels: [__param_target]
+        target_label: instance
 ```
 
 ## Dependencies

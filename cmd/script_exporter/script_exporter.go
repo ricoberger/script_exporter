@@ -16,7 +16,13 @@ import (
 	"github.com/ricoberger/script_exporter/pkg/version"
 )
 
-const namespace = "script"
+const (
+	namespace                 = "script"
+	scriptSuccessHelp         = "# HELP script_success Script exit status (0 = error, 1 = success)."
+	scriptSuccessType         = "# TYPE script_success gauge"
+	scriptDurationSecondsHelp = "# HELP script_duration_seconds Script execution time, in seconds."
+	scriptDurationSecondsType = "# TYPE script_duration_seconds gauge"
+)
 
 var (
 	exporterConfig config.Config
@@ -28,8 +34,8 @@ var (
 	shell         = flag.String("config.shell", "/bin/sh", "Shell to execute script")
 )
 
-func runScript(script string) (string, error) {
-	output, err := exec.Command(*shell, script).Output()
+func runScript(args []string) (string, error) {
+	output, err := exec.Command(*shell, args...).Output()
 	if err != nil {
 		return "", err
 	}
@@ -49,8 +55,19 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get prefix from url parameter
 	prefix := params.Get("prefix")
-	if prefix == "" {
-		prefix = namespace
+	if prefix != "" {
+		prefix = fmt.Sprintf("%s_", prefix)
+	}
+
+	// Get parameters
+	var paramValues []string
+	scriptParams := params.Get("params")
+	if scriptParams != "" {
+		paramValues = strings.Split(scriptParams, ",")
+
+		for i, p := range paramValues {
+			paramValues[i] = params.Get(p)
+		}
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -64,16 +81,16 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := runScript(script)
+	output, err := runScript(append([]string{script}, paramValues...))
 	if err != nil {
 		log.Printf("Script failed: %s\n", err.Error())
-		fmt.Fprintf(w, "%s_success{} %d\n%s_duration_seconds{} %f\n", prefix, 0, prefix, time.Since(scriptStartTime).Seconds())
+		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())
 		return
 	}
 
 	// Format output
-	regex1, _ := regexp.Compile("^" + prefix + "_\\w*{.*}\\s+")
-	regex2, _ := regexp.Compile("^" + prefix + "_\\w*{.*}\\s+[0-9|\\.]*")
+	regex1, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+")
+	regex2, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+[0-9|\\.]*")
 
 	var formatedOutput string
 	scanner := bufio.NewScanner(strings.NewReader(output))
@@ -85,7 +102,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		} else if metric[0:1] == "#" {
 			formatedOutput += fmt.Sprintf("%s\n", metric)
 		} else {
-			metric = fmt.Sprintf("%s_%s", prefix, metric)
+			metric = fmt.Sprintf("%s%s", prefix, metric)
 			metrics := regex1.FindAllString(metric, -1)
 			if len(metrics) == 1 {
 				value := strings.Replace(metric[len(metrics[0]):], ",", ".", -1)
@@ -96,7 +113,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Fprintf(w, "%s_success{} %d\n%s_duration_seconds{} %f\n%s\n", prefix, 1, prefix, time.Since(scriptStartTime).Seconds(), formatedOutput)
+	fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds(), formatedOutput)
 	return
 }
 
