@@ -125,3 +125,4 @@ scrape_configs:
 ## Dependencies
 
 - [yaml.v2 - YAML support for the Go language](gopkg.in/yaml.v2)
+- [jwt-go - Golang implementation of JSON Web Tokens (JWT)](github.com/dgrijalva/jwt-go)

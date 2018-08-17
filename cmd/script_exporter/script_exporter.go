@@ -30,6 +30,7 @@ var (
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	showVersion   = flag.Bool("version", false, "Show version information.")
+	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
 	shell         = flag.String("config.shell", "/bin/sh", "Shell to execute script")
 )
@@ -138,6 +139,17 @@ func main() {
 	err := exporterConfig.LoadConfig(*configFile)
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	// Create bearer token
+	if *createToken {
+		token, err := createJWT()
+		if err != nil {
+			log.Fatalf("Bearer token could not be created: %s\n", err.Error())
+		}
+
+		fmt.Printf("Bearer token: %s\n", token)
+		os.Exit(0)
 	}
 
 	// Start exporter
