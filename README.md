@@ -77,7 +77,7 @@ script: <string>
 
 ## Prometheus configuration
 
-The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix. If the `prefix` parameter is missing `script` will be used as prefix.
+The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`).
 
 Example config:
 
@@ -94,6 +94,26 @@ scrape_configs:
     relabel_configs:
       - target_label: script
         replacement: test
+  - job_name: 'script_ping'
+    scrape_interval: 1m
+    scrape_timeout: 30s
+    metrics_path: /metrics
+    params:
+      script: [ping]
+      prefix: [script_ping]
+      params: [target]
+    static_configs:
+      - targets:
+        - example.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9469
+      - source_labels: [__param_target]
+        target_label: target
+      - source_labels: [__param_target]
+        target_label: instance
 ```
 
 ## Dependencies
