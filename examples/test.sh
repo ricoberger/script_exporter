@@ -1,12 +1,15 @@
 #! /bin/bash
 
-echo "# First test"
+echo "# HELP test_first_test"
+echo "# TYPE test_first_test gauge"
 echo "first_test{label=\"test_1_label_1\"} 1"
 echo ""
-echo "# Second test"
+echo "# HELP test_second_test"
+echo "# TYPE test_second_test gauge"
 echo "second_test{label=\"test_2_label_1\",label=\"test_2_label_2\"} 2.71828182846"
 echo ""
-echo "# Third test"
+echo "# HELP test_third_test"
+echo "# TYPE test_third_test gauge"
 echo "third_test{} 3,14159265359"
 echo ""
 echo "Fourth test"

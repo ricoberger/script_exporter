@@ -24,16 +24,23 @@ Running:
 ./bin/script_exporter
 ```
 
-Then visit [http://localhost:9469/metrics?script=test](http://localhost:9469/metrics?script=test) in the browser of your choice. There you should see the following output:
+Then visit [http://localhost:9469/metrics?script=test&prefix=test](http://localhost:9469/metrics?script=test&prefix=test) in the browser of your choice. There you should see the following output:
 
 ```
-test_success{} 1
-test_duration_seconds{} 0.005626
-# First test
+# HELP script_success Script exit status (0 = error, 1 = success).
+# TYPE script_success gauge
+script_success{} 1
+# HELP script_duration_seconds Script execution time, in seconds.
+# TYPE script_duration_seconds gauge
+script_duration_seconds{} 0.006133
+# HELP test_first_test
+# TYPE test_first_test gauge
 test_first_test{label="test_1_label_1"} 1
-# Second test
+# HELP test_second_test
+# TYPE test_second_test gauge
 test_second_test{label="test_2_label_1",label="test_2_label_2"} 2.71828182846
-# Third test
+# HELP test_third_test
+# TYPE test_third_test gauge
 test_third_test{} 3.14159265359
 ```
 
