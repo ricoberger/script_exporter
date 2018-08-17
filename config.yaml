@@ -1,3 +1,17 @@
+tls:
+  active: false
+  crt: server.crt
+  key: server.key
+
+basicAuth:
+  active: false
+  username: admin
+  password: admin
+
+bearerAuth:
+  active: false
+  signingKey: my_secret_key
+
 scripts:
   - name: test
     script: ./examples/test.sh

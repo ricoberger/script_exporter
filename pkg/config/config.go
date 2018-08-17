@@ -8,6 +8,23 @@ import (
 
 // Config represents the structur of the configuration file
 type Config struct {
+	TLS struct {
+		Active bool   `yaml:"active"`
+		Crt    string `yaml:"crt"`
+		Key    string `yaml:"key"`
+	} `yaml:"tls"`
+
+	BasicAuth struct {
+		Active   bool   `yaml:"active"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+	} `yaml:"basicAuth"`
+
+	BearerAuth struct {
+		Active     bool   `yaml:"active"`
+		SigningKey string `yaml:"signingKey"`
+	} `yaml:"bearerAuth"`
+
 	Scripts []struct {
 		Name   string `yaml:"name"`
 		Script string `yaml:"script"`

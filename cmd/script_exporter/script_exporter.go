@@ -30,6 +30,7 @@ var (
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	showVersion   = flag.Bool("version", false, "Show version information.")
+	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
 	shell         = flag.String("config.shell", "/bin/sh", "Shell to execute script")
 )
@@ -140,13 +141,24 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// Create bearer token
+	if *createToken {
+		token, err := createJWT()
+		if err != nil {
+			log.Fatalf("Bearer token could not be created: %s\n", err.Error())
+		}
+
+		fmt.Printf("Bearer token: %s\n", token)
+		os.Exit(0)
+	}
+
 	// Start exporter
 	log.Printf("Starting script_exporter, version %s\n", version.Version)
 	log.Printf("Build go=%s, user=%s, date=%s, commit=%s\n", version.GoVersion, version.BuildUser, buildTime.Format(time.RFC1123), version.GitCommit)
 	log.Printf("Listening on %s\n", *listenAddress)
 
-	http.HandleFunc(*metricsPath, metricsHandler)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(*metricsPath, use(metricsHandler, auth))
+	http.HandleFunc("/", use(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
 		<body>
@@ -162,7 +174,11 @@ func main() {
 		</ul></p>
 		</body>
 		</html>`))
-	})
+	}, auth))
 
-	log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+	if exporterConfig.TLS.Active == true {
+		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))
+	} else {
+		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+	}
 }
