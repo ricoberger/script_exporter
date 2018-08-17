@@ -18,7 +18,7 @@ type Config struct {
 		Active   bool   `yaml:"active"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
-	} `yaml:"name"`
+	} `yaml:"basicAuth"`
 
 	Scripts []struct {
 		Name   string `yaml:"name"`

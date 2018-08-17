@@ -1,6 +1,6 @@
 tls:
   active: false
-  crt: server.cert
+  crt: server.crt
   key: server.key
 
 basicAuth:
