@@ -73,12 +73,23 @@ Usage of ./bin/script_exporter:
 The configuration file is written in YAML format, defined by the scheme described below.
 
 ```yaml
-scripts:
-  [ - <script_config> ... ]
+tls:
+  active: <boolean>
+  crt: <string>
+  key: <string>
 
-# script_config
-name: <string>
-script: <string>
+basicAuth:
+  active: <boolean>
+  username: <string>
+  password: <string>
+
+bearerAuth:
+  active: <boolean>
+  signingKey: <string>
+
+scripts:
+  - name: <string>
+    script: <string>
 ```
 
 ## Prometheus configuration
