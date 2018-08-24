@@ -89,6 +89,13 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get ignore output parameter and only return success and duration seconds if 'true'
+	outputParam := params.Get("output")
+	if outputParam == "ignore" {
+		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())
+		return
+	}
+
 	// Format output
 	regex1, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+")
 	regex2, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+[0-9|\\.]*")
