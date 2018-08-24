@@ -90,7 +90,7 @@ scripts:
 
 ## Prometheus configuration
 
-The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`).
+The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`). If the `output` parameter is set to `ignore` then the script exporter only return `script_success{}` and `script_duration_seconds{}`.
 
 Example config:
 
@@ -115,6 +115,7 @@ scrape_configs:
       script: [ping]
       prefix: [script_ping]
       params: [target]
+      output: [ignore]
     static_configs:
       - targets:
         - example.com
