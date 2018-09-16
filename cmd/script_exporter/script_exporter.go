@@ -82,7 +82,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := runScript(append([]string{script}, paramValues...))
+	output, err := runScript(append(strings.Split(script, " "), paramValues...))
 	if err != nil {
 		log.Printf("Script failed: %s\n", err.Error())
 		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())

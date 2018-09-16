@@ -17,3 +17,5 @@ scripts:
     script: ./examples/test.sh
   - name: ping
     script: ./examples/ping.sh
+  - name: helloworld
+    script: ./examples/helloworld.sh test
