@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"script_exporter/pkg/config"
-	"script_exporter/pkg/version"
+	"github.com/ricoberger/script_exporter/pkg/config"
+	"github.com/ricoberger/script_exporter/pkg/version"
 )
 
 const (
