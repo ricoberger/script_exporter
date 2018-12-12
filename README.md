@@ -11,10 +11,9 @@ Prerequisites:
 Building:
 
 ```
-git clone https://github.com/ricoberger/script_exporter.git $GOPATH/src/github.com/ricoberger/script_exporter
-cd $GOPATH/src/github.com/ricoberger/script_exporter
+git clone https://github.com/ricoberger/script_exporter.git
+cd script_exporter
 
-dep ensure
 make build
 ```
 
