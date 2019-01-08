@@ -1,6 +1,6 @@
 # script_exporter
 
-The script exporter is a [Prometheus](https://prometheus.io) exporter to execute scripts and collect metrics from the output or the exit status. The scripts to be executed are defined via a configuration file. In the configuration file several scripts can be specified. The script which should be executed is indicated by a parameter in the scrap configuration. The output of the script is captured and is provided for Prometheus. Even if the script does not produce any output, the exit status and the duration of the execution are provided.
+The script_exporter is a [Prometheus](https://prometheus.io) exporter to execute scripts and collect metrics from the output or the exit status. The scripts to be executed are defined via a configuration file. In the configuration file several scripts can be specified. The script which should be executed is indicated by a parameter in the scrap configuration. The output of the script is captured and is provided for Prometheus. Even if the script does not produce any output, the exit status and the duration of the execution are provided.
 
 ## Building and running
 
@@ -47,7 +47,7 @@ You can also visit the following url for a more complex example. The `ping` exam
 
 ## Usage and configuration
 
-The script exporter is configured via a configuration file and command-line flags.
+The script_exporter is configured via a configuration file and command-line flags.
 
 ```
 Usage of ./bin/script_exporter:
@@ -89,7 +89,7 @@ scripts:
 
 ## Prometheus configuration
 
-The script exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`). If the `output` parameter is set to `ignore` then the script exporter only return `script_success{}` and `script_duration_seconds{}`.
+The script_exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`). If the `output` parameter is set to `ignore` then the script_exporter only return `script_success{}` and `script_duration_seconds{}`.
 
 Example config:
 
