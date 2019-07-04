@@ -82,7 +82,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get and run script
 	script := exporterConfig.GetScript(scriptName)
-	if scriptName == "" {
+	if script == "" {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
 		return
