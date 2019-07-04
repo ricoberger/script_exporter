@@ -23,27 +23,12 @@ Running:
 ./bin/script_exporter
 ```
 
-Then visit [http://localhost:9469/metrics?script=test&prefix=test](http://localhost:9469/metrics?script=test&prefix=test) in the browser of your choice. There you should see the following output:
+Then visit [http://localhost:9469](http://localhost:9469) in the browser of your choice. There you have access to the following examples:
 
-```
-# HELP script_success Script exit status (0 = error, 1 = success).
-# TYPE script_success gauge
-script_success{} 1
-# HELP script_duration_seconds Script execution time, in seconds.
-# TYPE script_duration_seconds gauge
-script_duration_seconds{} 0.006133
-# HELP test_first_test
-# TYPE test_first_test gauge
-test_first_test{label="test_1_label_1"} 1
-# HELP test_second_test
-# TYPE test_second_test gauge
-test_second_test{label="test_2_label_1",label="test_2_label_2"} 2.71828182846
-# HELP test_third_test
-# TYPE test_third_test gauge
-test_third_test{} 3.14159265359
-```
-
-You can also visit the following url for a more complex example. The `ping` example uses the `params` parameter to check if a `target` is reachable: [http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com](http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com)
+- [test](http://localhost:9469/metrics?script=test&prefix=test): Invalid values which are returned by the script are omitted.
+- [ping](http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
+- [helloworld](http://localhost:9469/metrics?script=helloworld): Returns the specified argument in the `script` as label.
+- [curltest](http://localhost:9469/metrics?script=curltest&params=target&target=https://example.com): Runs a binary, which performs a get request against the specified `target` and returns the status code.
 
 ## Usage and configuration
 
