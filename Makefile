@@ -1,4 +1,4 @@
-WHAT := script_exporter
+WHAT := curltest script_exporter
 BUILDTIME := $(shell date +%FT%T%Z)
 VERSION=`git describe --tags`
 COMMIT=`git rev-parse HEAD`
