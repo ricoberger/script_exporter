@@ -54,7 +54,7 @@ Usage of ./bin/script_exporter:
   -config.file string
     	Configuration file in YAML format. (default "config.yaml")
   -config.shell string
-    	Shell to execute script (default "/bin/sh")
+    	Set shell to execute scripts with; otherwise they are executed directly
   -create-token
     	Create bearer token for authentication.
   -version
@@ -87,9 +87,13 @@ scripts:
     script: <string>
 ```
 
+The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. If a shell has not been set, the program will be executed directly; if a shell has been set, the shell will be used to run the script, executed as `SHELL script-name [argument ...]`. If a shell is set, what it runs must be a shell script (and for that shell); it cannot be a binary executable and any `#!` line at the start is ignored.
+
 ## Prometheus configuration
 
-The script_exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) and additional parameters which should be passed to the script (`params`). If the `output` parameter is set to `ignore` then the script_exporter only return `script_success{}` and `script_duration_seconds{}`.
+The script_exporter needs to be passed the script name as a parameter (`script`). You can also pass a custom prefix (`prefix`) which is prepended to metrics names and the names of additional parameters which should be passed to the script (`params` and then additional URL parameters). If the `output` parameter is set to `ignore` then the script_exporter only return `script_success{}` and `script_duration_seconds{}`.
+
+The `params` parameter is a comma-separated list of additional URL query parameters that will be used to construct the additional list of arguments, in order. The value of each URL query parameter is not parsed or split; it is passed directly to the script as a single argument.
 
 Example config:
 
