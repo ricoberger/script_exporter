@@ -135,16 +135,14 @@ func main() {
 	// Parse command-line flags
 	flag.Parse()
 
-	// Format build time
-	buildTime, _ := time.Parse("2006-01-02T15:04:05MST", version.BuildTime)
-
 	// Show version information
 	if *showVersion {
-		fmt.Printf("script_exporter, version %s, by %s\n", version.Version, version.Author)
-		fmt.Printf("  build user:         %s\n", version.BuildUser)
-		fmt.Printf("  build date:         %s\n", buildTime.Format(time.RFC1123))
-		fmt.Printf("  build commit:       %s\n", version.GitCommit)
-		fmt.Printf("  go version:         %s\n", version.GoVersion)
+		v, err := version.Print("script_exporter")
+		if err != nil {
+			log.Fatalf("Failed to print version information: %#v", err)
+		}
+
+		fmt.Fprintln(os.Stdout, v)
 		os.Exit(0)
 	}
 
@@ -166,9 +164,9 @@ func main() {
 	}
 
 	// Start exporter
-	log.Printf("Starting script_exporter, version %s\n", version.Version)
-	log.Printf("Build go=%s, user=%s, date=%s, commit=%s\n", version.GoVersion, version.BuildUser, buildTime.Format(time.RFC1123), version.GitCommit)
-	log.Printf("Listening on %s\n", *listenAddress)
+	fmt.Printf("Starting server %s\n", version.Info())
+	fmt.Printf("Build context %s\n", version.BuildContext())
+	fmt.Printf("script_exporter listening on %s\n", *listenAddress)
 
 	http.HandleFunc(*metricsPath, use(metricsHandler, auth))
 	http.HandleFunc("/", use(func(w http.ResponseWriter, r *http.Request) {
@@ -179,11 +177,11 @@ func main() {
 		<p><a href='` + *metricsPath + `'>Metrics</a></p>
 		<p><ul>
 		<li>version: ` + version.Version + `</li>
-		<li>author: ` + version.Author + `</li>
-		<li>build user: ` + version.BuildUser + `</li>
-		<li>build date: ` + buildTime.Format(time.RFC1123) + `</li>
-		<li>build commit: ` + version.GitCommit + `</li>
+		<li>branch: ` + version.Branch + `</li>
+		<li>revision: ` + version.Revision + `</li>
 		<li>go version: ` + version.GoVersion + `</li>
+		<li>build user: ` + version.BuildUser + `</li>
+		<li>build date: ` + version.BuildDate + `</li>
 		</ul></p>
 		</body>
 		</html>`))
