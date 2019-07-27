@@ -14,6 +14,9 @@ import (
 
 	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -28,7 +31,6 @@ var (
 	exporterConfig config.Config
 
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
-	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	showVersion   = flag.Bool("version", false, "Show version information.")
 	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
@@ -48,6 +50,34 @@ func runScript(args []string) (string, error) {
 	}
 
 	return string(output), nil
+}
+
+// instrumentScript wraps the underlying http.Handler with Prometheus
+// instrumentation to produce per-script metrics on the number of
+// requests in flight, the number of requests in total, and the
+// distribution of their duration. Requests without a 'script=' query
+// parameter are not instrumented (and will probably be rejected).
+func instrumentScript(obs prometheus.ObserverVec, cnt *prometheus.CounterVec, g *prometheus.GaugeVec, next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sn := r.URL.Query().Get("script")
+		if sn == "" {
+			// Rather than make up a fake script label, such
+			// as "NONE", we let the request fall through without
+			// instrumenting it. Under normal circumstances it
+			// will fail anyway, as metricsHandler() will
+			// reject it.
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		labels := prometheus.Labels{"script": sn}
+		g.With(labels).Inc()
+		defer g.With(labels).Dec()
+		now := time.Now()
+		next.ServeHTTP(w, r)
+		obs.With(labels).Observe(time.Since(now).Seconds())
+		cnt.With(labels).Inc()
+	})
 }
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,6 +161,84 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// setupMetrics creates and registers our internal Prometheus metrics,
+// and then wraps up a http.HandlerFunc into a http.Handler that
+// properly counts all of the metrics when a request happens.
+//
+// Portions of it are taken from the promhttp examples.
+//
+// We use the 'scripts' namespace for our internal metrics so that
+// they don't collide with the 'script' namespace for probe results.
+func setupMetrics(h http.HandlerFunc) http.Handler {
+	// Broad metrics provided by promhttp, namespaced into
+	// 'http' to make what they're about clear from their
+	// names.
+	reqs := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "http",
+			Name:      "requests_total",
+			Help:      "Total requests for scripts by HTTP result code and method.",
+		},
+		[]string{"code", "method"})
+	rdur := prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  "http",
+			Name:       "requests_duration_seconds",
+			Help:       "A summary of request durations by HTTP result code and method.",
+			Objectives: map[float64]float64{0.25: 0.05, 0.5: 0.05, 0.75: 0.02, 0.9: 0.01, 0.99: 0.001, 1.0: 0.001},
+		},
+		[]string{"code", "method"})
+
+	// Our per-script metrics, counting requests in flight and
+	// requests total, and providing a time distribution.
+	sreqs := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "scripts",
+			Name:      "requests_total",
+			Help:      "Total requests to a script",
+		},
+		[]string{"script"})
+	sif := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "scripts",
+			Name:      "requests_inflight",
+			Help:      "Number of requests in flight to a script",
+		},
+		[]string{"script"})
+	sdur := prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  "scripts",
+			Name:       "duration_seconds",
+			Help:       "A summary of request durations to a script",
+			Objectives: map[float64]float64{0.25: 0.05, 0.5: 0.05, 0.75: 0.02, 0.9: 0.01, 0.99: 0.001, 1.0: 0.001},
+			//Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		},
+		[]string{"script"},
+	)
+
+	// We also publish build information through a metric.
+	buildInfo := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "scripts",
+			Name:      "build_info",
+			Help:      "A metric with a constant '1' value labeled by build information.",
+		},
+		[]string{"version", "revision", "branch", "goversion", "builddate", "builduser"},
+	)
+	buildInfo.WithLabelValues(version.Version, version.Revision, version.Branch, version.GoVersion, version.BuildDate, version.BuildUser).Set(1)
+
+	prometheus.MustRegister(rdur, reqs, sreqs, sif, sdur, buildInfo)
+
+	// We don't use InstrumentHandlerInFlight, because that
+	// duplicates what we're doing on a per-script basis. The
+	// other promhttp handlers don't duplicate this work, because
+	// they capture result code and method. This is slightly
+	// questionable, but there you go.
+	return promhttp.InstrumentHandlerDuration(rdur,
+		promhttp.InstrumentHandlerCounter(reqs,
+			instrumentScript(sdur, sreqs, sif, h)))
+}
+
 func main() {
 	// Parse command-line flags
 	flag.Parse()
@@ -168,13 +276,20 @@ func main() {
 	fmt.Printf("Build context %s\n", version.BuildContext())
 	fmt.Printf("script_exporter listening on %s\n", *listenAddress)
 
-	http.HandleFunc(*metricsPath, use(metricsHandler, auth))
-	http.HandleFunc("/", use(func(w http.ResponseWriter, r *http.Request) {
+	// If authentication is required, it protects the ability to
+	// run scripts, which is the most potentially dangerous thing,
+	// but not our internal metrics (or the main page HTML). All
+	// of our Prometheus metrics about probes are created before
+	// any authentication is checked and possibly rejected.
+	http.Handle("/probe", setupMetrics(use(metricsHandler, auth)))
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
 		<body>
 		<h1>Script Exporter</h1>
-		<p><a href='` + *metricsPath + `'>Metrics</a></p>
+		<p><a href='/metrics'>Metrics</a></p>
+		<p><a href='/probe'>Probe</a></p>
 		<p><ul>
 		<li>version: ` + version.Version + `</li>
 		<li>branch: ` + version.Branch + `</li>
@@ -185,7 +300,7 @@ func main() {
 		</ul></p>
 		</body>
 		</html>`))
-	}, auth))
+	})
 
 	if exporterConfig.TLS.Active == true {
 		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))

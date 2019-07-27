@@ -25,10 +25,11 @@ Running:
 
 Then visit [http://localhost:9469](http://localhost:9469) in the browser of your choice. There you have access to the following examples:
 
-- [test](http://localhost:9469/metrics?script=test&prefix=test): Invalid values which are returned by the script are omitted.
-- [ping](http://localhost:9469/metrics?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
-- [helloworld](http://localhost:9469/metrics?script=helloworld): Returns the specified argument in the `script` as label.
-- [curltest](http://localhost:9469/metrics?script=curltest&params=target&target=https://example.com): Runs a binary, which performs a get request against the specified `target` and returns the status code.
+- [test](http://localhost:9469/probe?script=test&prefix=test): Invalid values which are returned by the script are omitted.
+- [ping](http://localhost:9469/probe?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
+- [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
+- [curltest](http://localhost:9469/probe?script=curltest&params=target&target=https://example.com): Runs a binary, which performs a get request against the specified `target` and returns the status code.
+- [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
 
 ## Usage and configuration
 
@@ -46,8 +47,6 @@ Usage of ./bin/script_exporter:
     	Show version information.
   -web.listen-address string
     	Address to listen on for web interface and telemetry. (default ":9469")
-  -web.telemetry-path string
-    	Path under which to expose metrics. (default "/metrics")
 ```
 
 The configuration file is written in YAML format, defined by the scheme described below.
@@ -85,7 +84,7 @@ Example config:
 ```yaml
 scrape_configs:
   - job_name: 'script_test'
-    metrics_path: /metrics
+    metrics_path: /probe
     params:
       script: [test]
       prefix: [script]
@@ -98,7 +97,7 @@ scrape_configs:
   - job_name: 'script_ping'
     scrape_interval: 1m
     scrape_timeout: 30s
-    metrics_path: /metrics
+    metrics_path: /probe
     params:
       script: [ping]
       prefix: [script_ping]
@@ -116,9 +115,21 @@ scrape_configs:
         target_label: target
       - source_labels: [__param_target]
         target_label: instance
+
+  - job_name: 'script_exporter'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - 127.0.0.1:9469
 ```
+
+## Breaking changes
+
+Changes from version 1.3.0:
+- The command line flag ``-web.telemetry-path`` has been removed and its value is now always ``/probe``, which is a change from the previous default of ``/metrics``. The path ``/metrics`` now responds with Prometheus metrics for script_exporter itself.
 
 ## Dependencies
 
 - [yaml.v2 - YAML support for the Go language](gopkg.in/yaml.v2)
 - [jwt-go - Golang implementation of JSON Web Tokens (JWT)](github.com/dgrijalva/jwt-go)
+- [prometheus client_golang - Prometheus instrumentation library for Go applications](https://github.com/prometheus/client_golang/)
