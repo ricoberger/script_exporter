@@ -34,17 +34,12 @@ var (
 	showVersion   = flag.Bool("version", false, "Show version information.")
 	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
-	shell         = flag.String("config.shell", "", "Set shell to execute scripts with; otherwise they are executed directly")
 )
 
 func runScript(args []string) (string, error) {
 	var output []byte
 	var err error
-	if *shell != "" {
-		output, err = exec.Command(*shell, args...).Output()
-	} else {
-		output, err = exec.Command(args[0], args[1:]...).Output()
-	}
+	output, err = exec.Command(args[0], args[1:]...).Output()
 	if err != nil {
 		return "", err
 	}

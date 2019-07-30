@@ -39,8 +39,6 @@ The script_exporter is configured via a configuration file and command-line flag
 Usage of ./bin/script_exporter:
   -config.file string
     	Configuration file in YAML format. (default "config.yaml")
-  -config.shell string
-    	Set shell to execute scripts with; otherwise they are executed directly
   -create-token
     	Create bearer token for authentication.
   -version
@@ -71,7 +69,7 @@ scripts:
     script: <string>
 ```
 
-The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. If a shell has not been set, the program will be executed directly; if a shell has been set, the shell will be used to run the script, executed as `SHELL script-name [argument ...]`. If a shell is set, what it runs must be a shell script (and for that shell); it cannot be a binary executable and any `#!` line at the start is ignored.
+The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
 ## Prometheus configuration
 
@@ -127,6 +125,7 @@ scrape_configs:
 
 Changes from version 1.3.0:
 - The command line flag ``-web.telemetry-path`` has been removed and its value is now always ``/probe``, which is a change from the previous default of ``/metrics``. The path ``/metrics`` now responds with Prometheus metrics for script_exporter itself.
+- The command line flag ``-config.shell`` has been removed. Programs are now always run directly.
 
 ## Dependencies
 
