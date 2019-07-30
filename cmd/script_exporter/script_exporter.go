@@ -1,3 +1,6 @@
+// Script_exporter is a Prometheus exporter to execute programs and
+// scripts and collect metrics from their output and their exit
+// status.
 package main
 
 import (
@@ -153,7 +156,6 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds(), formatedOutput)
-	return
 }
 
 // setupMetrics creates and registers our internal Prometheus metrics,
@@ -297,7 +299,7 @@ func main() {
 		</html>`))
 	})
 
-	if exporterConfig.TLS.Active == true {
+	if exporterConfig.TLS.Active {
 		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))
 	} else {
 		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
