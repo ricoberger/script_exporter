@@ -20,38 +20,38 @@ func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFu
 func auth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Basic authentication
-		if exporterConfig.BasicAuth.Active == true {
+		if exporterConfig.BasicAuth.Active {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 
 			username, password, authOK := r.BasicAuth()
-			if authOK == false {
-				http.Error(w, "Not authorized", 401)
+			if !authOK {
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
 			}
 
 			if username != exporterConfig.BasicAuth.Username || password != exporterConfig.BasicAuth.Password {
-				http.Error(w, "Not authorized", 401)
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
 			}
 		}
 
 		// Authentication using bearer token
-		if exporterConfig.BearerAuth.Active == true {
+		if exporterConfig.BearerAuth.Active {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, "Not authorized", 401)
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
 			}
 
 			authHeaderParts := strings.Split(authHeader, " ")
 			if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
-				http.Error(w, "Not authorized", 401)
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
 			}
 
 			err := checkJWT(authHeaderParts[1])
 			if err != nil {
-				http.Error(w, "Not authorized", 401)
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
 			}
 		}
@@ -64,7 +64,7 @@ func auth(h http.HandlerFunc) http.HandlerFunc {
 func checkJWT(jwtToken string) error {
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		return []byte(exporterConfig.BearerAuth.SigningKey), nil
@@ -78,7 +78,7 @@ func checkJWT(jwtToken string) error {
 		return nil
 	}
 
-	return errors.New("Not authorized")
+	return errors.New("not authorized")
 }
 
 // createJWT creates jwt tokens
