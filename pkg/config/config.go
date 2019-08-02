@@ -6,6 +6,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Making MaxTimeout a pointer to a float64 allows us to tell the
+// difference between an explicit 0 and an unconfigured setting.
+type timeout struct {
+	MaxTimeout *float64 `yaml:"max_timeout"`
+}
+
 // Config represents the structur of the configuration file
 type Config struct {
 	TLS struct {
@@ -25,9 +31,12 @@ type Config struct {
 		SigningKey string `yaml:"signingKey"`
 	} `yaml:"bearerAuth"`
 
+	Timeouts timeout `yaml:"timeouts"`
+
 	Scripts []struct {
-		Name   string `yaml:"name"`
-		Script string `yaml:"script"`
+		Name    string `yaml:"name"`
+		Script  string `yaml:"script"`
+		Timeout timeout
 	} `yaml:"scripts"`
 }
 
@@ -55,4 +64,22 @@ func (c *Config) GetScript(scriptName string) string {
 	}
 
 	return ""
+}
+
+// GetMaxTimeout returns the max_timeout for a given script name,
+// which comes from either the script's specific setting (if set)
+// or the global setting.
+func (c *Config) GetMaxTimeout(scriptName string) float64 {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			if script.Timeout.MaxTimeout != nil {
+				return *script.Timeout.MaxTimeout
+			}
+			break
+		}
+	}
+	if c.Timeouts.MaxTimeout != nil {
+		return *c.Timeouts.MaxTimeout
+	}
+	return 0
 }

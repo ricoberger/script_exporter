@@ -12,6 +12,9 @@ bearerAuth:
   active: false
   signingKey: my_secret_key
 
+timeouts:
+  max_timeout: 0
+
 scripts:
   - name: test
     script: ./examples/test.sh
@@ -21,3 +24,7 @@ scripts:
     script: ./examples/helloworld.sh test
   - name: curltest
     script: ./bin/curltest
+  - name: showtimeout
+    script: ./examples/showtimeout.sh
+    timeout:
+      max_timeout: 60

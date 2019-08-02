@@ -29,6 +29,7 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 - [ping](http://localhost:9469/probe?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
 - [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
 - [curltest](http://localhost:9469/probe?script=curltest&params=target&target=https://example.com): Runs a binary, which performs a get request against the specified `target` and returns the status code.
+- [showtimeout](http://localhost:9469/probe?script=showtimeout&timeout=37): Reports whether or not the script is being run with a timeout from Prometheus, and what it is.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
 
 ## Usage and configuration
@@ -41,6 +42,8 @@ Usage of ./bin/script_exporter:
     	Configuration file in YAML format. (default "config.yaml")
   -create-token
     	Create bearer token for authentication.
+  -timeout-offset seconds
+        Offset to subtract from Prometheus-supplied timeout in seconds. (default 0.5)
   -version
     	Show version information.
   -web.listen-address string
@@ -64,12 +67,23 @@ bearerAuth:
   active: <boolean>
   signingKey: <string>
 
+timeouts:
+  # in seconds, default 0 (no maximum)
+  max_timeout: <float>
+
 scripts:
   - name: <string>
     script: <string>
+    # optional
+    timeout:
+      max_timeout: <float>
 ```
 
 The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
+
+Prometheus will normally provide an indication of its scrape timeout to the script exporter (through a special HTTP header). This information is made available to scripts through the environment variables `$SCRIPT_TIMEOUT` and `$SCRIPT_DEADLINE`. The first is the timeout in seconds (including a fractional part) and the second is the Unix timestamp when the deadline will expire (also including a fractional part). A simple script could implement this timeout by starting with `timeout "$SCRIPT_TIMEOUT" cmd ...`. A more sophisticated program might want to use the deadline time to compute internal timeouts for various operation.
+
+For testing purposes, this timeout can be specified directly as a URL parameter (`timeout`). If present, the URL parameter takes priority over the Prometheus HTTP header. If `max_timeout` is set in the configuration file, it limits the maximum timeout value that HTTP requests can specify. A `max_timeout` of 0 means no limit, allowing a script to remove a general `max_timeout`.
 
 ## Prometheus configuration
 
