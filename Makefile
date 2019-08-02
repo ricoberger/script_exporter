@@ -52,14 +52,14 @@ build-windows-amd64:
 	done
 
 build-linux-armv7:
-    for target in $(WHAT); do \
-        CGO_ENABLED=0 GOARCH=arm GOARM=7 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-            -X ${REPO}/pkg/version.Revision=${REVISION} \
-            -X ${REPO}/pkg/version.Branch=${BRANCH} \
-            -X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-            -X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-            -o ./bin/$$target-${VERSION}-linux-armv7 ./cmd/$$target; \
-    done
+	for target in $(WHAT); do \
+		CGO_ENABLED=0 GOARCH=arm GOARM=7 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
+			-X ${REPO}/pkg/version.Revision=${REVISION} \
+			-X ${REPO}/pkg/version.Branch=${BRANCH} \
+			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
+			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
+			-o ./bin/$$target-${VERSION}-linux-armv7 ./cmd/$$target; \
+	done
 
 clean:
 	rm -rf ./bin
