@@ -8,8 +8,10 @@ import (
 
 // Making MaxTimeout a pointer to a float64 allows us to tell the
 // difference between an explicit 0 and an unconfigured setting.
+// Ditto for Enforced.
 type timeout struct {
 	MaxTimeout *float64 `yaml:"max_timeout"`
+	Enforced   *bool    `yaml:"enforced"`
 }
 
 // Config represents the structur of the configuration file
@@ -82,4 +84,21 @@ func (c *Config) GetMaxTimeout(scriptName string) float64 {
 		return *c.Timeouts.MaxTimeout
 	}
 	return 0
+}
+
+// GetTimeoutEnforced returns whether or not timeouts should be
+// enforced by script_exporter for a particular script.
+func (c *Config) GetTimeoutEnforced(scriptName string) bool {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			if script.Timeout.Enforced != nil {
+				return *script.Timeout.Enforced
+			}
+			break
+		}
+	}
+	if c.Timeouts.Enforced != nil {
+		return *c.Timeouts.Enforced
+	}
+	return false
 }

@@ -14,6 +14,7 @@ bearerAuth:
 
 timeouts:
   max_timeout: 0
+  enforced: false
 
 scripts:
   - name: test
@@ -28,3 +29,7 @@ scripts:
     script: ./examples/showtimeout.sh
     timeout:
       max_timeout: 60
+  - name: sleep
+    script: sleep 120
+    timeout:
+      enforced: true

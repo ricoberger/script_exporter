@@ -14,4 +14,8 @@ echo "script_timeout_seconds{} $SCRIPT_TIMEOUT"
 echo "# HELP script_deadline_seconds Unix timestamp when the timeout will expire"
 echo "# TYPE script_deadline_seconds gauge"
 echo "script_deadline_seconds{} $SCRIPT_DEADLINE"
+
+echo "# HELP script_timeout_enforced Whether or not script_exporter is enforcing a timeout on the script."
+echo "# TYPE script_timeout_enforced gauge"
+echo "script_timeout_enforced{} $SCRIPT_TIMEOUT_ENFORCED"
 exit 0

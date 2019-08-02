@@ -70,6 +70,7 @@ bearerAuth:
 timeouts:
   # in seconds, default 0 (no maximum)
   max_timeout: <float>
+  enforced: <boolean>
 
 scripts:
   - name: <string>
@@ -77,13 +78,14 @@ scripts:
     # optional
     timeout:
       max_timeout: <float>
+      enforced: <boolean>
 ```
 
 The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
-Prometheus will normally provide an indication of its scrape timeout to the script exporter (through a special HTTP header). This information is made available to scripts through the environment variables `$SCRIPT_TIMEOUT` and `$SCRIPT_DEADLINE`. The first is the timeout in seconds (including a fractional part) and the second is the Unix timestamp when the deadline will expire (also including a fractional part). A simple script could implement this timeout by starting with `timeout "$SCRIPT_TIMEOUT" cmd ...`. A more sophisticated program might want to use the deadline time to compute internal timeouts for various operation.
+Prometheus will normally provide an indication of its scrape timeout to the script exporter (through a special HTTP header). This information is made available to scripts through the environment variables `$SCRIPT_TIMEOUT` and `$SCRIPT_DEADLINE`. The first is the timeout in seconds (including a fractional part) and the second is the Unix timestamp when the deadline will expire (also including a fractional part). A simple script could implement this timeout by starting with `timeout "$SCRIPT_TIMEOUT" cmd ...`. A more sophisticated program might want to use the deadline time to compute internal timeouts for various operation. If `enforced` is true, either globally or for the script, `script_exporter` attempts to enforce the timeout by killing the script's main process after the timeout expires. The default is to not enforce timeouts.
 
-For testing purposes, this timeout can be specified directly as a URL parameter (`timeout`). If present, the URL parameter takes priority over the Prometheus HTTP header. If `max_timeout` is set in the configuration file, it limits the maximum timeout value that HTTP requests can specify. A `max_timeout` of 0 means no limit, allowing a script to remove a general `max_timeout`.
+For testing purposes, the timeout can be specified directly as a URL parameter (`timeout`). If present, the URL parameter takes priority over the Prometheus HTTP header. If `max_timeout` is set in the configuration file, it limits the maximum timeout value that HTTP requests can specify. A `max_timeout` of 0 means no limit, allowing a script to remove a general `max_timeout`.
 
 ## Prometheus configuration
 
