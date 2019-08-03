@@ -38,7 +38,7 @@ var (
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	showVersion   = flag.Bool("version", false, "Show version information.")
 	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
-	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
+	configFile    = flag.String("config.file", "config.yaml", "Configuration `file` in YAML format.")
 	timeoutOffset = flag.Float64("timeout-offset", 0.5, "Offset to subtract from Prometheus-supplied timeout in `seconds`.")
 )
 
@@ -340,6 +340,12 @@ func main() {
 
 		fmt.Fprintln(os.Stdout, v)
 		os.Exit(0)
+	}
+
+	// Avoid problems by erroring out if we have any remaining
+	// arguments, instead of silently ignoring them.
+	if len(flag.Args()) != 0 {
+		log.Fatalf("Usage error: program takes no arguments, only options.")
 	}
 
 	// Load configuration file

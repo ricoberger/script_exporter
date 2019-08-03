@@ -38,7 +38,7 @@ The script_exporter is configured via a configuration file and command-line flag
 
 ```
 Usage of ./bin/script_exporter:
-  -config.file string
+  -config.file file
     	Configuration file in YAML format. (default "config.yaml")
   -create-token
     	Create bearer token for authentication.
