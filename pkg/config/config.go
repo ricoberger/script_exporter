@@ -33,8 +33,6 @@ type Config struct {
 		SigningKey string `yaml:"signingKey"`
 	} `yaml:"bearerAuth"`
 
-	Timeouts timeout `yaml:"timeouts"`
-
 	Scripts []struct {
 		Name    string `yaml:"name"`
 		Script  string `yaml:"script"`
@@ -68,9 +66,7 @@ func (c *Config) GetScript(scriptName string) string {
 	return ""
 }
 
-// GetMaxTimeout returns the max_timeout for a given script name,
-// which comes from either the script's specific setting (if set)
-// or the global setting.
+// GetMaxTimeout returns the max_timeout for a given script name.
 func (c *Config) GetMaxTimeout(scriptName string) float64 {
 	for _, script := range c.Scripts {
 		if script.Name == scriptName {
@@ -80,14 +76,11 @@ func (c *Config) GetMaxTimeout(scriptName string) float64 {
 			break
 		}
 	}
-	if c.Timeouts.MaxTimeout != nil {
-		return *c.Timeouts.MaxTimeout
-	}
 	return 0
 }
 
 // GetTimeoutEnforced returns whether or not timeouts should be
-// enforced by script_exporter for a particular script.
+// enforced by script_exporter for a particular script name.
 func (c *Config) GetTimeoutEnforced(scriptName string) bool {
 	for _, script := range c.Scripts {
 		if script.Name == scriptName {
@@ -96,9 +89,6 @@ func (c *Config) GetTimeoutEnforced(scriptName string) bool {
 			}
 			break
 		}
-	}
-	if c.Timeouts.Enforced != nil {
-		return *c.Timeouts.Enforced
 	}
 	return false
 }

@@ -12,10 +12,6 @@ bearerAuth:
   active: false
   signingKey: my_secret_key
 
-timeouts:
-  max_timeout: 0
-  enforced: false
-
 scripts:
   - name: test
     script: ./examples/test.sh
