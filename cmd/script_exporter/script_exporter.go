@@ -370,14 +370,14 @@ func main() {
 	fmt.Printf("Build context %s\n", version.BuildContext())
 	fmt.Printf("script_exporter listening on %s\n", *listenAddress)
 
-	// If authentication is required, it protects the ability to
-	// run scripts, which is the most potentially dangerous thing,
-	// but not our internal metrics (or the main page HTML). All
-	// of our Prometheus metrics about probes are created before
-	// any authentication is checked and possibly rejected.
-	http.Handle("/probe", setupMetrics(use(metricsHandler, auth)))
-	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// Authentication can be enabled via the 'basicAuth' or 'bearerAuth'
+	// section in the configuration. If authentication is enabled it's
+	// required for all routes.
+	router := http.NewServeMux()
+
+	router.Handle("/probe", setupMetrics(metricsHandler))
+	router.Handle("/metrics", promhttp.Handler())
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
 		<body>
@@ -397,8 +397,8 @@ func main() {
 	})
 
 	if exporterConfig.TLS.Active {
-		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))
+		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, auth(router)))
 	} else {
-		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+		log.Fatalln(http.ListenAndServe(*listenAddress, auth(router)))
 	}
 }
