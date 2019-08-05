@@ -5,6 +5,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,18 +38,102 @@ var (
 	listenAddress = flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	showVersion   = flag.Bool("version", false, "Show version information.")
 	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
-	configFile    = flag.String("config.file", "config.yaml", "Configuration file in YAML format.")
+	configFile    = flag.String("config.file", "config.yaml", "Configuration `file` in YAML format.")
+	timeoutOffset = flag.Float64("timeout-offset", 0.5, "Offset to subtract from Prometheus-supplied timeout in `seconds`.")
 )
 
-func runScript(args []string) (string, error) {
+// runScript runs a program with some arguments; the program is
+// args[0]. The timeout argument is in seconds, and if it's larger
+// than zero, it is exported into the environment as $SCRIPT_TIMEOUT
+// (its raw value) and $SCRIPT_DEADLINE, which is the Unix timestamp
+// (including fractional parts) when the deadline will expire. If
+// enforced is true, the timeout will be enforced by script_exporter,
+// by killing the script if the timeout is reached, and
+// $SCRIPT_TIMEOUT_ENFORCED will be set to 1 in the environment to
+// inform the script of this.
+//
+// Note that killing the script is only a best effort attempt to
+// terminate its execution and time out the request. Sub-processes may
+// not be terminated, and termination may not be entirely successful.
+//
+// Tentatively, we do not inherit the context from the HTTP request.
+// Doing so would provide automatic termination should the client
+// close the connection, but it would mean that all scripts would
+// be subject to abrupt termination regardless of any 'enforced:'
+// settings. Right now, abrupt termination requires opting in in
+// the configuration file.
+func runScript(timeout float64, enforced bool, args []string) (string, error) {
 	var output []byte
 	var err error
-	output, err = exec.Command(args[0], args[1:]...).Output()
+
+	// We go through a great deal of work to get a deadline with
+	// fractional seconds that we can expose in an environment
+	// variable. However, this is pretty much necessary since
+	// we've copied Blackbox's default of a half second adjustment
+	// to the raw Prometheus timeout.  We can hardly do that and
+	// then round our deadlines (or our raw timeouts) off to full
+	// seconds.
+	ns := float64(time.Second)
+	deadline := time.Now().Add(time.Duration(timeout * ns))
+	dlfractional := float64(deadline.UnixNano()) / ns
+
+	var cmd *exec.Cmd
+	var cancel context.CancelFunc
+	ctx := context.Background()
+	if timeout > 0 && enforced {
+		ctx, cancel = context.WithDeadline(context.Background(), deadline)
+		defer cancel()
+	}
+	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
+
+	if timeout > 0 {
+		cmd.Env = os.Environ()
+		// Three digits of fractional precision in the seconds and
+		// the deadline are probably excessive, given that we're
+		// running external programs. But better slightly excessive
+		// than not enough precision.
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SCRIPT_TIMEOUT=%0.3f", timeout))
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SCRIPT_DEADLINE=%0.3f", dlfractional))
+		var ienforced int
+		if enforced {
+			ienforced = 1
+		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SCRIPT_TIMEOUT_ENFORCED=%d", ienforced))
+	}
+
+	output, err = cmd.Output()
 	if err != nil {
 		return "", err
 	}
 
 	return string(output), nil
+}
+
+// getTimeout gets the Prometheus scrape timeout (in seconds) from the
+// HTTP request, either from a 'timeout' query parameter or from the
+// special HTTP header that Prometheus inserts on scrapes, and returns
+// it or 0 on error.  If there is a timeout, it is modified down by
+// the offset.
+func getTimeout(r *http.Request, offset float64, maxTimeout float64) float64 {
+	v := r.URL.Query().Get("timeout")
+	if v == "" {
+		v = r.Header.Get("X-Prometheus-Scrape-Timeout-Seconds")
+	}
+	if v == "" {
+		return 0
+	}
+	ts, err := strconv.ParseFloat(v, 64)
+	adjusted := ts - offset
+	switch {
+	case err != nil:
+		return 0
+	case maxTimeout < adjusted && maxTimeout > 0:
+		return maxTimeout
+	case adjusted <= 0:
+		return 0
+	default:
+		return adjusted
+	}
 }
 
 // instrumentScript wraps the underlying http.Handler with Prometheus
@@ -116,7 +202,12 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := runScript(append(strings.Split(script, " "), paramValues...))
+	// Get the timeout from either Prometheus's HTTP header or a URL
+	// query parameter, clamped to a maximum specified through the
+	// configuration file.
+	timeout := getTimeout(r, *timeoutOffset, exporterConfig.GetMaxTimeout(scriptName))
+
+	output, err := runScript(timeout, exporterConfig.GetTimeoutEnforced(scriptName), append(strings.Split(script, " "), paramValues...))
 	if err != nil {
 		log.Printf("Script failed: %s\n", err.Error())
 		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())
@@ -249,6 +340,12 @@ func main() {
 
 		fmt.Fprintln(os.Stdout, v)
 		os.Exit(0)
+	}
+
+	// Avoid problems by erroring out if we have any remaining
+	// arguments, instead of silently ignoring them.
+	if len(flag.Args()) != 0 {
+		log.Fatalf("Usage error: program takes no arguments, only options.")
 	}
 
 	// Load configuration file

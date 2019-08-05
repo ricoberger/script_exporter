@@ -21,3 +21,11 @@ scripts:
     script: ./examples/helloworld.sh test
   - name: curltest
     script: ./bin/curltest
+  - name: showtimeout
+    script: ./examples/showtimeout.sh
+    timeout:
+      max_timeout: 60
+  - name: sleep
+    script: sleep 120
+    timeout:
+      enforced: true
