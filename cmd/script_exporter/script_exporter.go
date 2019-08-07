@@ -403,12 +403,14 @@ func main() {
 		Handler: auth(router),
 	}
 
+	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown
+	// the HTTP server. This ensures that active connections are not
+	// interrupted.
 	go func() {
 		term := make(chan os.Signal, 1)
 		signal.Notify(term, os.Interrupt, syscall.SIGTERM)
 		select {
 		case <-term:
-			// Shutdown server
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
@@ -423,6 +425,9 @@ func main() {
 		}
 	}()
 
+	// Listen for SIGHUP signal and reload the configuration. If the
+	// configuration could not be reloaded, the old config will continue to be
+	// used.
 	go func() {
 		hup := make(chan os.Signal, 1)
 		signal.Notify(hup, syscall.SIGHUP)
