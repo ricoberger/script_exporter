@@ -404,7 +404,7 @@ func main() {
 	}
 
 	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown
-	// the HTTP server. This ensures that active connections are not
+	// the HTTP server. This ensures that enabled connections are not
 	// interrupted.
 	go func() {
 		term := make(chan os.Signal, 1)
@@ -442,7 +442,7 @@ func main() {
 		}
 	}()
 
-	if exporterConfig.TLS.Active {
+	if exporterConfig.TLS.Enabled {
 		log.Fatalln(server.ListenAndServeTLS(exporterConfig.TLS.Crt, exporterConfig.TLS.Key))
 	} else {
 		log.Fatalln(server.ListenAndServe())

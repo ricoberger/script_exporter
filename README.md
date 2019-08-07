@@ -54,17 +54,17 @@ The configuration file is written in YAML format, defined by the scheme describe
 
 ```yaml
 tls:
-  active: <boolean>
+  enabled: <boolean>
   crt: <string>
   key: <string>
 
 basicAuth:
-  active: <boolean>
+  enabled: <boolean>
   username: <string>
   password: <string>
 
 bearerAuth:
-  active: <boolean>
+  enabled: <boolean>
   signingKey: <string>
 
 scripts:

@@ -1,15 +1,15 @@
 tls:
-  active: false
+  enabled: false
   crt: server.crt
   key: server.key
 
 basicAuth:
-  active: false
+  enabled: false
   username: admin
   password: admin
 
 bearerAuth:
-  active: false
+  enabled: false
   signingKey: my_secret_key
 
 scripts:

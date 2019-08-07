@@ -17,19 +17,19 @@ type timeout struct {
 // Config represents the structur of the configuration file
 type Config struct {
 	TLS struct {
-		Active bool   `yaml:"active"`
-		Crt    string `yaml:"crt"`
-		Key    string `yaml:"key"`
+		Enabled bool   `yaml:"enabled"`
+		Crt     string `yaml:"crt"`
+		Key     string `yaml:"key"`
 	} `yaml:"tls"`
 
 	BasicAuth struct {
-		Active   bool   `yaml:"active"`
+		Enabled  bool   `yaml:"enabled"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 	} `yaml:"basicAuth"`
 
 	BearerAuth struct {
-		Active     bool   `yaml:"active"`
+		Enabled    bool   `yaml:"enabled"`
 		SigningKey string `yaml:"signingKey"`
 	} `yaml:"bearerAuth"`
 
