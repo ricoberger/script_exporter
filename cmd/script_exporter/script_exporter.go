@@ -12,9 +12,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ricoberger/script_exporter/pkg/config"
@@ -396,9 +398,34 @@ func main() {
 		</html>`))
 	})
 
+	server := &http.Server{
+		Addr:    *listenAddress,
+		Handler: auth(router),
+	}
+
+	go func() {
+		term := make(chan os.Signal, 1)
+		signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+		select {
+		case <-term:
+			// Shutdown server
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			err := server.Shutdown(ctx)
+			if err != nil {
+				log.Printf("Failed to shutdown script_exporter gracefully: %s\n", err.Error())
+				os.Exit(1)
+			}
+
+			log.Printf("Shutdown script_exporter...\n")
+			os.Exit(0)
+		}
+	}()
+
 	if exporterConfig.TLS.Active {
-		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, auth(router)))
+		log.Fatalln(server.ListenAndServeTLS(exporterConfig.TLS.Crt, exporterConfig.TLS.Key))
 	} else {
-		log.Fatalln(http.ListenAndServe(*listenAddress, auth(router)))
+		log.Fatalln(server.ListenAndServe())
 	}
 }
