@@ -423,6 +423,20 @@ func main() {
 		}
 	}()
 
+	go func() {
+		hup := make(chan os.Signal, 1)
+		signal.Notify(hup, syscall.SIGHUP)
+		select {
+		case <-hup:
+			err := exporterConfig.LoadConfig(*configFile)
+			if err != nil {
+				log.Printf("Could not reload configuration: %s\n", err.Error())
+			} else {
+				log.Printf("Configuration reloaded\n")
+			}
+		}
+	}()
+
 	if exporterConfig.TLS.Active {
 		log.Fatalln(server.ListenAndServeTLS(exporterConfig.TLS.Crt, exporterConfig.TLS.Key))
 	} else {
