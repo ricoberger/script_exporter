@@ -9,18 +9,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
-	for _, m := range middleware {
-		h = m(h)
-	}
-
-	return h
-}
-
-func auth(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func auth(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Basic authentication
-		if exporterConfig.BasicAuth.Active {
+		if exporterConfig.BasicAuth.Enabled {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 
 			username, password, authOK := r.BasicAuth()
@@ -36,7 +28,7 @@ func auth(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Authentication using bearer token
-		if exporterConfig.BearerAuth.Active {
+		if exporterConfig.BearerAuth.Enabled {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				http.Error(w, "Not authorized", http.StatusUnauthorized)
@@ -57,7 +49,7 @@ func auth(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		h.ServeHTTP(w, r)
-	}
+	})
 }
 
 // checkJWT validates jwt tokens

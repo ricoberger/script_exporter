@@ -12,9 +12,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ricoberger/script_exporter/pkg/config"
@@ -370,14 +372,14 @@ func main() {
 	fmt.Printf("Build context %s\n", version.BuildContext())
 	fmt.Printf("script_exporter listening on %s\n", *listenAddress)
 
-	// If authentication is required, it protects the ability to
-	// run scripts, which is the most potentially dangerous thing,
-	// but not our internal metrics (or the main page HTML). All
-	// of our Prometheus metrics about probes are created before
-	// any authentication is checked and possibly rejected.
-	http.Handle("/probe", setupMetrics(use(metricsHandler, auth)))
-	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// Authentication can be enabled via the 'basicAuth' or 'bearerAuth'
+	// section in the configuration. If authentication is enabled it's
+	// required for all routes.
+	router := http.NewServeMux()
+
+	router.Handle("/probe", setupMetrics(metricsHandler))
+	router.Handle("/metrics", promhttp.Handler())
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
 		<body>
@@ -396,9 +398,53 @@ func main() {
 		</html>`))
 	})
 
-	if exporterConfig.TLS.Active {
-		log.Fatalln(http.ListenAndServeTLS(*listenAddress, exporterConfig.TLS.Crt, exporterConfig.TLS.Key, nil))
+	server := &http.Server{
+		Addr:    *listenAddress,
+		Handler: auth(router),
+	}
+
+	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown
+	// the HTTP server. This ensures that enabled connections are not
+	// interrupted.
+	go func() {
+		term := make(chan os.Signal, 1)
+		signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+		select {
+		case <-term:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			err := server.Shutdown(ctx)
+			if err != nil {
+				log.Printf("Failed to shutdown script_exporter gracefully: %s\n", err.Error())
+				os.Exit(1)
+			}
+
+			log.Printf("Shutdown script_exporter...\n")
+			os.Exit(0)
+		}
+	}()
+
+	// Listen for SIGHUP signal and reload the configuration. If the
+	// configuration could not be reloaded, the old config will continue to be
+	// used.
+	go func() {
+		hup := make(chan os.Signal, 1)
+		signal.Notify(hup, syscall.SIGHUP)
+		select {
+		case <-hup:
+			err := exporterConfig.LoadConfig(*configFile)
+			if err != nil {
+				log.Printf("Could not reload configuration: %s\n", err.Error())
+			} else {
+				log.Printf("Configuration reloaded\n")
+			}
+		}
+	}()
+
+	if exporterConfig.TLS.Enabled {
+		log.Fatalln(server.ListenAndServeTLS(exporterConfig.TLS.Crt, exporterConfig.TLS.Key))
 	} else {
-		log.Fatalln(http.ListenAndServe(*listenAddress, nil))
+		log.Fatalln(server.ListenAndServe())
 	}
 }
