@@ -236,7 +236,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		if metric == "" {
 			// Do nothing
 		} else if metric[0:1] == "#" {
-			formatedOutput += fmt.Sprintf("%s\n", rexexSharp.ReplaceAllString(metric, "${1}" + prefix))
+			formatedOutput += fmt.Sprintf("%s\n", regexSharp.ReplaceAllString(metric, "${1}" + prefix))
 		} else {
 			metric = fmt.Sprintf("%s%s", prefix, metric)
 			metrics := regex1.FindAllString(metric, -1)
