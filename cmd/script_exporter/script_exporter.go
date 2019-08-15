@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"bytes"
 
 	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
@@ -227,8 +228,9 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	regex1, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+")
 	regex2, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+[0-9|\\.]*")
 	regexSharp, _ := regexp.Compile("^(# *(?:TYPE|HELP) +)")
+	regexSharpReplace := "${1}" + prefix
 
-	var formatedOutput string
+	var formatedBuffer bytes.Buffer
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	for scanner.Scan() {
 		metric := strings.Trim(scanner.Text(), " ")
@@ -237,23 +239,25 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 			// Do nothing
 		} else if metric[0:1] == "#" {
 			if prefix != "" {
-				formatedOutput += regexSharp.ReplaceAllString(metric, "${1}" + prefix) + "\n"
-			} else {
-				formatedOutput += fmt.Sprintf("%s\n", metric)
+				metric = regexSharp.ReplaceAllString(metric, regexSharpReplace)
 			}
+			formatedBuffer.WriteString(metric)
+			formatedBuffer.WriteString("\n")
 		} else {
-			metric = fmt.Sprintf("%s%s", prefix, metric)
+			metric = prefix + metric
 			metrics := regex1.FindAllString(metric, -1)
 			if len(metrics) == 1 {
 				value := strings.Replace(metric[len(metrics[0]):], ",", ".", -1)
 				if regex2.MatchString(metrics[0] + value) {
-					formatedOutput += fmt.Sprintf("%s%s\n", metrics[0], value)
+					formatedBuffer.WriteString(metrics[0])
+					formatedBuffer.WriteString(value)
+					formatedBuffer.WriteString("\n")
 				}
 			}
 		}
 	}
 
-	fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds(), formatedOutput)
+	fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds(), formatedBuffer.String())
 }
 
 // setupMetrics creates and registers our internal Prometheus metrics,
