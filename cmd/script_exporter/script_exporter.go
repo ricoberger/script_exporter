@@ -226,7 +226,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Format output
 	regex1, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+")
 	regex2, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+[0-9|\\.]*")
-	rexexSharp, _ := regexp.Compile("^(# *(?:TYPE|HELP) +)")
+	regexSharp, _ := regexp.Compile("^(# *(?:TYPE|HELP) +)")
 
 	var formatedOutput string
 	scanner := bufio.NewScanner(strings.NewReader(output))
