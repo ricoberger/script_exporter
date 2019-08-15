@@ -224,8 +224,9 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Format output
-	regex1, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+")
-	regex2, _ := regexp.Compile("^" + prefix + "\\w*{.*}\\s+[0-9|\\.]*")
+	regex1, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+")
+	regex2, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+[0-9|\\.]*")
+	regexSharp, _ := regexp.Compile("^(# *(?:TYPE|HELP) +)")
 
 	var formatedOutput string
 	scanner := bufio.NewScanner(strings.NewReader(output))
@@ -235,7 +236,11 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		if metric == "" {
 			// Do nothing
 		} else if metric[0:1] == "#" {
-			formatedOutput += fmt.Sprintf("%s\n", metric)
+			if prefix != "" {
+				formatedOutput += regexSharp.ReplaceAllString(metric, "${1}" + prefix) + "\n"
+			} else {
+				formatedOutput += fmt.Sprintf("%s\n", metric)
+			}
 		} else {
 			metric = fmt.Sprintf("%s%s", prefix, metric)
 			metrics := regex1.FindAllString(metric, -1)
