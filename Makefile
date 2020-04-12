@@ -9,7 +9,7 @@ BRANCH      ?= $(shell git rev-parse --abbrev-ref HEAD)
 BUILDUSER   ?= $(shell id -un)
 BUILDTIME   ?= $(shell date '+%Y%m%d-%H:%M:%S')
 
-.PHONY: build build-darwin-amd64 build-linux-amd64 build-windows-amd64 clean release release-major release-minor release-patch
+.PHONY: build build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-windows-amd64 clean release release-major release-minor release-patch
 
 build:
 	for target in $(WHAT); do \
@@ -28,7 +28,7 @@ build-darwin-amd64:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-${VERSION}-darwin-amd64 ./cmd/$$target; \
+			-o ./bin/$$target-darwin-amd64 ./cmd/$$target; \
 	done
 
 build-linux-amd64:
@@ -38,17 +38,7 @@ build-linux-amd64:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-${VERSION}-linux-amd64 ./cmd/$$target; \
-	done
-
-build-windows-amd64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-${VERSION}-windows-amd64.exe ./cmd/$$target; \
+			-o ./bin/$$target-linux-amd64 ./cmd/$$target; \
 	done
 
 build-linux-armv7:
@@ -58,13 +48,24 @@ build-linux-armv7:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-${VERSION}-linux-armv7 ./cmd/$$target; \
+			-o ./bin/$$target-linux-armv7 ./cmd/$$target; \
 	done
+
+build-windows-amd64:
+	for target in $(WHAT); do \
+		CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
+			-X ${REPO}/pkg/version.Revision=${REVISION} \
+			-X ${REPO}/pkg/version.Branch=${BRANCH} \
+			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
+			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
+			-o ./bin/$$target-windows-amd64.exe ./cmd/$$target; \
+	done
+
 
 clean:
 	rm -rf ./bin
 
-release: clean build-darwin-amd64 build-linux-amd64 build-windows-amd64
+release: clean build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-windows-amd64
 
 release-major:
 	$(eval MAJORVERSION=$(shell git describe --tags --abbrev=0 | sed s/v// | awk -F. '{print "v"$$1+1".0.0"}'))
