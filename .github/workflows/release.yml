@@ -29,10 +29,10 @@ jobs:
 
       - name: Upload
         run: |
-          ./upload.sh ./bin/dash-darwin-amd64 application/x-binary
-          ./upload.sh ./bin/dash-linux-amd64 application/x-binary
-          ./upload.sh ./bin/dash-linux-armv7 application/x-binary
-          ./upload.sh ./bin/dash-windows-amd64.exe application/x-binary
+          ./upload.sh ./bin/script_exporter-darwin-amd64 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-amd64 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-armv7 application/x-binary
+          ./upload.sh ./bin/script_exporter-windows-amd64.exe application/x-binary
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
 
