@@ -4,22 +4,14 @@ The script_exporter is a [Prometheus](https://prometheus.io) exporter to execute
 
 ## Building and running
 
-Prerequisites:
-
-- [Go compiler](https://golang.org/dl/)
-
-Building:
+To run the script_exporter you can use the [Docker image](https://hub.docker.com/r/ricoberger/script_exporter) or one of the binaries for every [release](https://github.com/ricoberger/script_exporter/releases). To build the script_exporter by yourself run the following commands:
 
 ```
 git clone https://github.com/ricoberger/script_exporter.git
 cd script_exporter
 
 make build
-```
 
-Running:
-
-```
 ./bin/script_exporter
 ```
 
@@ -28,7 +20,6 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 - [test](http://localhost:9469/probe?script=test&prefix=test): Invalid values which are returned by the script are omitted.
 - [ping](http://localhost:9469/probe?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
 - [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
-- [curltest](http://localhost:9469/probe?script=curltest&params=target&target=https://example.com): Runs a binary, which performs a get request against the specified `target` and returns the status code.
 - [showtimeout](http://localhost:9469/probe?script=showtimeout&timeout=37): Reports whether or not the script is being run with a timeout from Prometheus, and what it is.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
 
