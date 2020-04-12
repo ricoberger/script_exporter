@@ -19,8 +19,6 @@ scripts:
     script: ./examples/ping.sh
   - name: helloworld
     script: ./examples/helloworld.sh test
-  - name: curltest
-    script: ./bin/curltest
   - name: showtimeout
     script: ./examples/showtimeout.sh
     timeout:

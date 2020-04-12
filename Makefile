@@ -1,4 +1,4 @@
-WHAT := curltest script_exporter
+WHAT := script_exporter
 
 PROJECT     ?= script_exporter
 REPO        ?= github.com/ricoberger/script_exporter
