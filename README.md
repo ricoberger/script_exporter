@@ -4,15 +4,18 @@ The script_exporter is a [Prometheus](https://prometheus.io) exporter to execute
 
 ## Building and running
 
-To run the script_exporter you can use the [Docker image](https://hub.docker.com/r/ricoberger/script_exporter) or one of the binaries for every [release](https://github.com/ricoberger/script_exporter/releases). To build the script_exporter by yourself run the following commands:
+To run the script_exporter you can use the one of the binaries from the [release](https://github.com/ricoberger/script_exporter/releases) page or the [Docker image](https://hub.docker.com/r/ricoberger/script_exporter). You can also build the script_exporter by yourself by running the following commands:
 
 ```
 git clone https://github.com/ricoberger/script_exporter.git
 cd script_exporter
-
 make build
+```
 
-./bin/script_exporter
+An example configuration can be found in the [examples](./examples) folder. To use this configuration run the following command:
+
+```sh
+./bin/script_exporter -config.file ./examples/config.yaml
 ```
 
 Then visit [http://localhost:9469](http://localhost:9469) in the browser of your choice. There you have access to the following examples:
@@ -22,6 +25,8 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 - [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
 - [showtimeout](http://localhost:9469/probe?script=showtimeout&timeout=37): Reports whether or not the script is being run with a timeout from Prometheus, and what it is.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
+
+You can also deploy the script_exporter to Kubernetes. An example Deployment file can be found here: [examples/kubernetes.yaml](./examples/kubernetes.yaml).
 
 ## Usage and configuration
 
