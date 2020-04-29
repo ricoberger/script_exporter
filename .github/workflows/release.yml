@@ -32,6 +32,7 @@ jobs:
           ./upload.sh ./bin/script_exporter-darwin-amd64 application/x-binary
           ./upload.sh ./bin/script_exporter-linux-amd64 application/x-binary
           ./upload.sh ./bin/script_exporter-linux-armv7 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-arm64 application/x-binary
           ./upload.sh ./bin/script_exporter-windows-amd64.exe application/x-binary
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
