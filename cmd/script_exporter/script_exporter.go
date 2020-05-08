@@ -212,14 +212,14 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	output, err := runScript(timeout, exporterConfig.GetTimeoutEnforced(scriptName), append(strings.Split(script, " "), paramValues...))
 	if err != nil {
 		log.Printf("Script failed: %s\n", err.Error())
-		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())
+		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds())
 		return
 	}
 
 	// Get ignore output parameter and only return success and duration seconds if 'true'
 	outputParam := params.Get("output")
 	if outputParam == "ignore" {
-		fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds())
+		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds())
 		return
 	}
 
@@ -253,7 +253,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Fprintf(w, "%s\n%s\n%s_success{} %d\n%s\n%s\n%s_duration_seconds{} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, time.Since(scriptStartTime).Seconds(), formatedOutput)
+	fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), formatedOutput)
 }
 
 // setupMetrics creates and registers our internal Prometheus metrics,
