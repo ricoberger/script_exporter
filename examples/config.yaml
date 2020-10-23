@@ -27,3 +27,5 @@ scripts:
     script: sleep 120
     timeout:
       enforced: true
+  - name: docker
+    script: ./examples/docker.sh

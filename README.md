@@ -24,6 +24,7 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 - [ping](http://localhost:9469/probe?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
 - [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
 - [showtimeout](http://localhost:9469/probe?script=showtimeout&timeout=37): Reports whether or not the script is being run with a timeout from Prometheus, and what it is.
+- [docker](http://localhost:9469/probe?script=docker): Example using `docker exec` to return the number of files in a Docker container.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
 
 You can also deploy the script_exporter to Kubernetes. An example Deployment file can be found here: [examples/kubernetes.yaml](./examples/kubernetes.yaml).
