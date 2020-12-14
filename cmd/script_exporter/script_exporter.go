@@ -169,7 +169,6 @@ func instrumentScript(obs prometheus.ObserverVec, cnt *prometheus.CounterVec, g 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get script from url parameter
 	params := r.URL.Query()
-	scriptName := params.Get("script")
 
 	// Get prefix from url parameter
 	prefix := params.Get("prefix")
@@ -192,8 +191,10 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	scriptStartTime := time.Now()
 
 	// Get and run script
-	script := exporterConfig.Scripts[0].Script
-	fmt.Printf("Running script: %v", script)
+	scriptConfig := exporterConfig.Scripts[0]
+	script := scriptConfig.Script
+	scriptName := scriptConfig.Name
+	fmt.Printf("Running script: %v", scriptName)
 	if script == "" {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
