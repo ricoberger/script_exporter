@@ -145,7 +145,7 @@ func getTimeout(r *http.Request, offset float64, maxTimeout float64) float64 {
 // parameter are not instrumented (and will probably be rejected).
 func instrumentScript(obs prometheus.ObserverVec, cnt *prometheus.CounterVec, g *prometheus.GaugeVec, next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sn := r.URL.Query().Get("script")
+		sn := exporterConfig.Scripts[0].Name
 		if sn == "" {
 			// Rather than make up a fake script label, such
 			// as "NONE", we let the request fall through without
@@ -170,11 +170,6 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get script from url parameter
 	params := r.URL.Query()
 	scriptName := params.Get("script")
-	if scriptName == "" {
-		log.Printf("Script parameter is missing\n")
-		http.Error(w, "Script parameter is missing", http.StatusBadRequest)
-		return
-	}
 
 	// Get prefix from url parameter
 	prefix := params.Get("prefix")
@@ -197,7 +192,8 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	scriptStartTime := time.Now()
 
 	// Get and run script
-	script := exporterConfig.GetScript(scriptName)
+	script := exporterConfig.Scripts[0].Script
+	fmt.Printf("Running script: %v", script)
 	if script == "" {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
