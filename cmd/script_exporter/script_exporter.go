@@ -378,15 +378,13 @@ func main() {
 	// required for all routes.
 	router := http.NewServeMux()
 
-	router.Handle("/probe", setupMetrics(metricsHandler))
-	router.Handle("/metrics", promhttp.Handler())
+	router.Handle("/metrics", setupMetrics(metricsHandler))
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
 		<body>
 		<h1>Script Exporter</h1>
 		<p><a href='/metrics'>Metrics</a></p>
-		<p><a href='/probe'>Probe</a></p>
 		<p><ul>
 		<li>version: ` + version.Version + `</li>
 		<li>branch: ` + version.Branch + `</li>
