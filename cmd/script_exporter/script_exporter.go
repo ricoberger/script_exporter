@@ -194,7 +194,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	scriptConfig := exporterConfig.Scripts[0]
 	script := scriptConfig.Script
 	scriptName := scriptConfig.Name
-	fmt.Printf("Running script: %v - with timeout: %v", scriptConfig.Name, scriptConfig.Timeout)
+	fmt.Printf("Running script: %v - with timeout: %v\n", scriptConfig.Name, scriptConfig.Timeout)
 	if script == "" {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
