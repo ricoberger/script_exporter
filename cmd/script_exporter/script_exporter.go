@@ -215,7 +215,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get ignore output parameter and only return success and duration seconds if 'true'
 	outputParam := params.Get("output")
-	if outputParam == "ignore" {
+	if outputParam == "ignore" || outputParam == "" {
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds())
 		return
 	}
