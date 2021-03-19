@@ -105,7 +105,7 @@ func runScript(timeout float64, enforced bool, args []string) (string, error) {
 
 	output, err = cmd.Output()
 	if err != nil {
-		return "", err
+		return string(output), err
 	}
 
 	return string(output), nil
@@ -194,7 +194,11 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 	scriptConfig := exporterConfig.Scripts[0]
 	script := scriptConfig.Script
 	scriptName := scriptConfig.Name
-	fmt.Printf("Running script: %v - with timeout: %v\n", scriptConfig.Name, scriptConfig.Timeout)
+	if scriptConfig.Timeout.MaxTimeout != nil {
+		log.Printf("Running script: %v - with timeout: %v\n", scriptConfig.Name, scriptConfig.Timeout)
+	} else {
+		log.Printf("Running script: %v", scriptConfig.Name)
+	}
 	if script == "" {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
@@ -208,7 +212,14 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	output, err := runScript(timeout, exporterConfig.GetTimeoutEnforced(scriptName), append(strings.Split(script, " "), paramValues...))
 	if err != nil {
-		log.Printf("Script failed: %s\n", err.Error())
+		var joinedOutput string
+		scanner := bufio.NewScanner(strings.NewReader(output))
+		for scanner.Scan() {
+			joinedOutput += scanner.Text()
+		}
+		formattedOutput := strings.Replace(joinedOutput, "http_code=", ", http_code=", -1)
+		log.Printf("Script Failed: %s, exitCode=\"%s\"", formattedOutput, err.Error())
+
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds())
 		return
 	}
