@@ -217,8 +217,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 		for scanner.Scan() {
 			joinedOutput += scanner.Text()
 		}
-		formattedOutput := strings.Replace(joinedOutput, "http_code=", ", http_code=", -1)
-		log.Printf("Script Failed: %s, exitCode=\"%s\"", formattedOutput, err.Error())
+		log.Printf("Script Failed: %s, exitCode=\"%s\"", joinedOutput, err.Error())
 
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds())
 		return
