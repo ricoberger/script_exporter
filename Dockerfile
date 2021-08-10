@@ -1,4 +1,4 @@
-FROM golang:1.13-alpine3.10 as build
+FROM golang:1.16-alpine3.14 as build
 
 RUN apk add --no-cache --update git make
 
@@ -8,7 +8,7 @@ COPY . .
 RUN make build
 
 
-FROM alpine:3.10
+FROM alpine:3.14
 
 LABEL maintainer="Rico Berger"
 LABEL git.url="https://github.com/ricoberger/script_exporter"
