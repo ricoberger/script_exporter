@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ricoberger/script_exporter/pkg/auth"
 	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
 
@@ -42,6 +43,7 @@ var (
 	createToken   = flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile    = flag.String("config.file", "config.yaml", "Configuration `file` in YAML format.")
 	timeoutOffset = flag.Float64("timeout-offset", 0.5, "Offset to subtract from Prometheus-supplied timeout in `seconds`.")
+	noargs        = flag.Bool("noargs", false, "Resctict script to accept arguments, for security issues")
 )
 
 // runScript runs a program with some arguments; the program is
@@ -184,12 +186,14 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get parameters
 	var paramValues []string
-	scriptParams := params.Get("params")
-	if scriptParams != "" {
-		paramValues = strings.Split(scriptParams, ",")
+	if !*noargs {
+		scriptParams := params.Get("params")
+		if scriptParams != "" {
+			paramValues = strings.Split(scriptParams, ",")
 
-		for i, p := range paramValues {
-			paramValues[i] = params.Get(p)
+			for i, p := range paramValues {
+				paramValues[i] = params.Get(p)
+			}
 		}
 	}
 
@@ -237,7 +241,7 @@ func metricsHandler(w http.ResponseWriter, r *http.Request) {
 			// Do nothing
 		} else if metric[0:1] == "#" {
 			if prefix != "" {
-				formatedOutput += regexSharp.ReplaceAllString(metric, "${1}" + prefix) + "\n"
+				formatedOutput += regexSharp.ReplaceAllString(metric, "${1}"+prefix) + "\n"
 			} else {
 				formatedOutput += fmt.Sprintf("%s\n", metric)
 			}
@@ -363,7 +367,7 @@ func main() {
 
 	// Create bearer token
 	if *createToken {
-		token, err := createJWT()
+		token, err := auth.CreateJWT(exporterConfig)
 		if err != nil {
 			log.Fatalf("Bearer token could not be created: %s\n", err.Error())
 		}
@@ -405,7 +409,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    *listenAddress,
-		Handler: auth(router),
+		Handler: auth.Auth(router, exporterConfig),
 	}
 
 	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown

@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"errors"
@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/ricoberger/script_exporter/pkg/config"
 )
 
-func auth(h http.Handler) http.Handler {
+func Auth(h http.Handler, exporterConfig config.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Basic authentication
 		if exporterConfig.BasicAuth.Enabled {
@@ -41,7 +42,7 @@ func auth(h http.Handler) http.Handler {
 				return
 			}
 
-			err := checkJWT(authHeaderParts[1])
+			err := checkJWT(authHeaderParts[1], exporterConfig)
 			if err != nil {
 				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
@@ -52,8 +53,8 @@ func auth(h http.Handler) http.Handler {
 	})
 }
 
-// checkJWT validates jwt tokens
-func checkJWT(jwtToken string) error {
+// CheckJWT validates jwt tokens
+func checkJWT(jwtToken string, exporterConfig config.Config) error {
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -74,7 +75,7 @@ func checkJWT(jwtToken string) error {
 }
 
 // createJWT creates jwt tokens
-func createJWT() (string, error) {
+func CreateJWT(exporterConfig config.Config) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	tokenString, err := token.SignedString([]byte(exporterConfig.BearerAuth.SigningKey))
 	return tokenString, err
