@@ -18,7 +18,7 @@ build:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target ./cmd/$$target/${WHAT}_linux.go; \
+			-o ./bin/$$target ./cmd/$$target; \
 	done
 
 build-darwin-amd64:
@@ -28,7 +28,7 @@ build-darwin-amd64:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-darwin-amd64 ./cmd/$$target/${WHAT}_linux.go; \
+			-o ./bin/$$target-darwin-amd64 ./cmd/$$target; \
 	done
 
 build-linux-amd64:
@@ -38,7 +38,7 @@ build-linux-amd64:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-linux-amd64 ./cmd/$$target/${WHAT}_linux.go; \
+			-o ./bin/$$target-linux-amd64 ./cmd/$$target; \
 	done
 
 build-linux-armv7:
@@ -48,7 +48,7 @@ build-linux-armv7:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-linux-armv7 ./cmd/$$target/${WHAT}_linux.go; \
+			-o ./bin/$$target-linux-armv7 ./cmd/$$target; \
 	done
 
 build-linux-arm64:
@@ -58,7 +58,7 @@ build-linux-arm64:
 		-X ${REPO}/pkg/version.Branch=${BRANCH} \
 		-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 		-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-		-o ./bin/$$target-linux-arm64 ./cmd/$$target/${WHAT}_linux.go; \
+		-o ./bin/$$target-linux-arm64 ./cmd/$$target; \
 		done
 
 build-windows-amd64:
