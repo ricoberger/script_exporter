@@ -68,7 +68,7 @@ build-windows-amd64:
 			-X ${REPO}/pkg/version.Branch=${BRANCH} \
 			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
 			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-windows-amd64.exe ./cmd/$$target; \
+			-o ./bin/$$target-windows-amd64.exe ./cmd/$$target/${WHAT}_windows.go; \
 	done
 
 
