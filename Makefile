@@ -31,6 +31,16 @@ build-darwin-amd64:
 			-o ./bin/$$target-darwin-amd64 ./cmd/$$target; \
 	done
 
+build-darwin-arm64:
+	for target in $(WHAT); do \
+		CGO_ENABLED=0 GOARCH=arm64 GOOS=darwin go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
+			-X ${REPO}/pkg/version.Revision=${REVISION} \
+			-X ${REPO}/pkg/version.Branch=${BRANCH} \
+			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
+			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
+			-o ./bin/$$target-darwin-arm64 ./cmd/$$target; \
+	done
+
 build-linux-amd64:
 	for target in $(WHAT); do \
 		CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
@@ -71,11 +81,10 @@ build-windows-amd64:
 			-o ./bin/$$target-windows-amd64.exe ./cmd/$$target/${WHAT}_windows.go; \
 	done
 
-
 clean:
 	rm -rf ./bin
 
-release: clean build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64
+release: clean build-darwin-amd64 build-darwin-arm64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64
 
 release-major:
 	$(eval MAJORVERSION=$(shell git describe --tags --abbrev=0 | sed s/v// | awk -F. '{print "v"$$1+1".0.0"}'))

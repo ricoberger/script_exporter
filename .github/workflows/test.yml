@@ -1,0 +1,71 @@
+name: Test
+
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    name: Test
+    steps:
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: make release
+
+      - name: Upload Artifacts (darwin-amd64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-darwin-amd64
+          path: bin/script_exporter-darwin-amd64
+          if-no-files-found: error
+
+      - name: Upload Artifacts (darwin-arm64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-darwin-arm64
+          path: bin/script_exporter-darwin-arm64
+          if-no-files-found: error
+
+      - name: Upload Artifacts (linux-amd64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-linux-amd64
+          path: bin/script_exporter-linux-amd64
+          if-no-files-found: error
+
+      - name: Upload Artifacts (linux-armv7)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-linux-armv7
+          path: bin/script_exporter-linux-armv7
+          if-no-files-found: error
+
+      - name: Upload Artifacts (linux-arm64)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-linux-arm64
+          path: bin/script_exporter-linux-arm64
+          if-no-files-found: error
+
+      - name: Upload Artifacts (windows-amd64.exe)
+        uses: actions/upload-artifact@v2
+        with:
+          name: script_exporter-windows-amd64.exe
+          path: bin/script_exporter-windows-amd64.exe
+          if-no-files-found: error
