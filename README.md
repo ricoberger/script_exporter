@@ -6,7 +6,7 @@ The script_exporter is a [Prometheus](https://prometheus.io) exporter to execute
 
 To run the script_exporter you can use the one of the binaries from the [release](https://github.com/ricoberger/script_exporter/releases) page or the [Docker image](https://hub.docker.com/r/ricoberger/script_exporter). You can also build the script_exporter by yourself by running the following commands:
 
-```
+```sh
 git clone https://github.com/ricoberger/script_exporter.git
 cd script_exporter
 make build
@@ -33,18 +33,18 @@ You can also deploy the script_exporter to Kubernetes. An example Deployment fil
 
 The script_exporter is configured via a configuration file and command-line flags.
 
-```
+```txt
 Usage of ./bin/script_exporter:
   -config.file file
-    	Configuration file in YAML format. (default "config.yaml")
+        Configuration file in YAML format. (default "config.yaml")
   -create-token
-    	Create bearer token for authentication.
+        Create bearer token for authentication.
   -timeout-offset seconds
         Offset to subtract from Prometheus-supplied timeout in seconds. (default 0.5)
   -version
-    	Show version information.
+        Show version information.
   -web.listen-address string
-    	Address to listen on for web interface and telemetry. (default ":9469")
+        Address to listen on for web interface and telemetry. (default ":9469")
 ```
 
 The configuration file is written in YAML format, defined by the scheme described below.

@@ -32,7 +32,7 @@ import (
 // be subject to abrupt termination regardless of any 'enforced:'
 // settings. Right now, abrupt termination requires opting in in
 // the configuration file.
-func runScript(timeout float64, enforced bool, args []string) (string, error) {
+func runScript(timeout float64, enforced bool, args []string) (string, int, error) {
 	var output []byte
 	var err error
 
@@ -73,10 +73,14 @@ func runScript(timeout float64, enforced bool, args []string) (string, error) {
 
 	output, err = cmd.Output()
 	if err != nil {
-		return "", err
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return "", exitError.ExitCode(), err
+		}
+
+		return "", -1, err
 	}
 
-	return string(output), nil
+	return string(output), 0, nil
 }
 
 // getTimeout gets the Prometheus scrape timeout (in seconds) from the

@@ -23,6 +23,8 @@ const (
 	scriptSuccessType         = "# TYPE script_success gauge"
 	scriptDurationSecondsHelp = "# HELP script_duration_seconds Script execution time, in seconds."
 	scriptDurationSecondsType = "# TYPE script_duration_seconds gauge"
+	scriptExitCodeHelp        = "# HELP script_exit_code The exit code of the script."
+	scriptExitCodeType        = "# TYPE script_exit_code gauge"
 )
 
 type Exporter struct {
