@@ -1,0 +1,12 @@
+version: '3'
+services:
+  script_exporter:
+    command:
+      - '-config.file=/bin/examples/config.yaml'
+      - '-web.listen-address=:9469'
+    container_name: 'script_exporter'
+    image: 'ricoberger/script_exporter:v2.4.0'
+    ports:
+      - '9469:9469'
+    volumes:
+      - './examples:/bin/examples'
