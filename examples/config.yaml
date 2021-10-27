@@ -29,3 +29,5 @@ scripts:
       enforced: true
   - name: docker
     script: ./examples/docker.sh
+  - name: args
+    script: ./examples/args.sh test1 test2
