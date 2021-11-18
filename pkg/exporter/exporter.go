@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -34,7 +35,7 @@ type Exporter struct {
 	server        *http.Server
 }
 
-//NewExporter return an exporter objkect with all his variables
+//NewExporter return an exporter object with all its variables
 func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool) (e *Exporter) {
 	e = &Exporter{
 		Config:        &config.Config{},
@@ -94,6 +95,35 @@ func InitExporter() (e *Exporter) {
 
 	router.Handle("/probe", SetupMetrics(e.MetricsHandler))
 	router.Handle("/metrics", promhttp.Handler())
+	router.HandleFunc("/discovery", func(w http.ResponseWriter, r *http.Request) {
+		host := ""
+		port := ""
+		if strings.Contains(r.Host, ":") {
+			host = strings.Split(r.Host, ":")[0]
+			port = strings.Split(r.Host, ":")[1]
+		} else {
+			host = r.Host
+			port = "9469"
+		}
+		scheme := "http"
+		if len(e.Config.Discovery.Host) > 0 {
+			host = e.Config.Discovery.Host
+		}
+		if len(e.Config.Discovery.Port) > 0 {
+			port = e.Config.Discovery.Port
+		}
+		if len(e.Config.Discovery.Scheme) > 0 {
+			scheme = e.Config.Discovery.Scheme
+		}
+		w.Write([]byte(`[{"targets": [ `))
+		for idx, script := range e.Config.Scripts {
+			w.Write([]byte(`"` + scheme + `://` + host + `:` + port + `/probe?script=` + script.Name + `"`))
+			if idx+1 < len(e.Config.Scripts) {
+				w.Write([]byte(`,`))
+			}
+		}
+		w.Write([]byte(`]}]`))
+	})
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>Script Exporter</title></head>
