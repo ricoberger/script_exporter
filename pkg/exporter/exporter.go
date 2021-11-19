@@ -115,14 +115,16 @@ func InitExporter() (e *Exporter) {
 		if len(e.Config.Discovery.Scheme) > 0 {
 			scheme = e.Config.Discovery.Scheme
 		}
-		w.Write([]byte(`[{"targets": [ `))
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`[ `))
 		for idx, script := range e.Config.Scripts {
-			w.Write([]byte(`"` + scheme + `://` + host + `:` + port + `/probe?script=` + script.Name + `"`))
+			w.Write([]byte(`{"targets": ["` + host + `:` + port + `"],`))
+			w.Write([]byte(`"labels":{"__scheme__":"` + scheme + `","__metrics_path__":"/probe","__param_script":"` + script.Name + `"}}`))
 			if idx+1 < len(e.Config.Scripts) {
 				w.Write([]byte(`,`))
 			}
 		}
-		w.Write([]byte(`]}]`))
+		w.Write([]byte(`]`))
 	})
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
