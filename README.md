@@ -65,6 +65,11 @@ bearerAuth:
   enabled: <boolean>
   signingKey: <string>
 
+discovery:
+  host: <string>
+  port: <string>
+  scheme: <string>
+
 scripts:
   - name: <string>
     script: <string>
@@ -78,6 +83,8 @@ scripts:
 The `name` of the script must be a valid Prometheus label value. The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
 Prometheus will normally provide an indication of its scrape timeout to the script exporter (through a special HTTP header). This information is made available to scripts through the environment variables `$SCRIPT_TIMEOUT` and `$SCRIPT_DEADLINE`. The first is the timeout in seconds (including a fractional part) and the second is the Unix timestamp when the deadline will expire (also including a fractional part). A simple script could implement this timeout by starting with `timeout "$SCRIPT_TIMEOUT" cmd ...`. A more sophisticated program might want to use the deadline time to compute internal timeouts for various operation. If `enforced` is true, `script_exporter` attempts to enforce the timeout by killing the script's main process after the timeout expires. The default is to not enforce timeouts. If `max_timeout` is set for a script, it limits the maximum timeout value that requests can specify; a request that specifies a larger timeout will have the timeout adjusted down to the `max_timeout` value.
+
+The `discovery` configures the discovery parameters. If not defined, the exporter will use `Host:` header from the request to decide how to present a `target` to prometheus.
 
 For testing purposes, the timeout can be specified directly as a URL parameter (`timeout`). If present, the URL parameter takes priority over the Prometheus HTTP header.
 
@@ -130,6 +137,15 @@ scrape_configs:
       - targets:
         - 127.0.0.1:9469
 ```
+
+Optionally, HTTP service discovery can be configured like this:
+
+```
+- job_name: "exported-scripts"
+  http_sd_configs:
+  - url: http://prometheus-script-exporter:9469/discovery
+```
+this will make prometheus reach to `/discovery` endpoint and collect the targets. Targets are all the scripts configured in the exporter.
 
 ## Breaking changes
 
