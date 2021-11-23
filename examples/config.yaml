@@ -12,6 +12,11 @@ bearerAuth:
   enabled: false
   signingKey: my_secret_key
 
+discovery:
+  # host: localhost
+  # port: 1231
+  # scheme: https
+
 scripts:
   - name: test
     script: ./examples/test.sh

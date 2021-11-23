@@ -38,6 +38,11 @@ type Config struct {
 		Script  string `yaml:"script"`
 		Timeout timeout
 	} `yaml:"scripts"`
+	Discovery struct {
+		Host   string `yaml:"host"`
+		Port   string `yaml:"port"`
+		Scheme string `yaml:"scheme"`
+	} `yaml:"discovery"`
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
