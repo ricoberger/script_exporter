@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/prometheus/client_golang v1.11.0
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
