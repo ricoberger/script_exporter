@@ -13,7 +13,7 @@ FROM alpine:3.14
 LABEL maintainer="Rico Berger"
 LABEL git.url="https://github.com/ricoberger/script_exporter"
 
-RUN apk add --no-cache --update curl ca-certificates
+RUN apk add --no-cache --update bash curl ca-certificates
 
 USER nobody
 
