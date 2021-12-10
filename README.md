@@ -18,6 +18,13 @@ An example configuration can be found in the [examples](./examples) folder. To u
 ./bin/script_exporter -config.file ./examples/config.yaml
 ```
 
+To run the examples via Docker the following commands can be used:
+
+```sh
+docker build -f ./Dockerfile -t ricoberger/script_exporter:dev .
+docker run --rm -it --name script_exporter -p 9469:9469 -v $(pwd)/examples:/examples ricoberger/script_exporter:dev -config.file /examples/config.yaml
+```
+
 Then visit [http://localhost:9469](http://localhost:9469) in the browser of your choice. There you have access to the following examples:
 
 - [test](http://localhost:9469/probe?script=test&prefix=test): Invalid values which are returned by the script are omitted.
@@ -150,6 +157,7 @@ this will make prometheus reach to `/discovery` endpoint and collect the targets
 ## Breaking changes
 
 Changes from version 1.3.0:
+
 - The command line flag ``-web.telemetry-path`` has been removed and its value is now always ``/probe``, which is a change from the previous default of ``/metrics``. The path ``/metrics`` now responds with Prometheus metrics for script_exporter itself.
 - The command line flag ``-config.shell`` has been removed. Programs are now always run directly.
 
