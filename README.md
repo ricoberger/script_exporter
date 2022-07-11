@@ -89,6 +89,25 @@ scripts:
 
 The `name` of the script must be a valid Prometheus label value. The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
+**Note:** because the program is executed directly, shell constructions can't be used.
+For example:
+
+```shell
+# Error: output stream redirection (>) is a shell construction
+/bin/foo >/dev/null
+# Success: use appropriate command line arguments if supported by the command
+/bin/foo --output /dev/null
+
+# Error: logical operator (||) is a shell construction
+/bin/foo || true
+# Success: use shell interpreter with arguments
+/bin/bash -c '/bin/foo || true'
+# Success: or create an executable script file
+/usr/local/bin/bar.sh
+# Success: or run it via interpreter
+/bin/bash /usr/local/bin/bar.sh
+```
+
 Prometheus will normally provide an indication of its scrape timeout to the script exporter (through a special HTTP header). This information is made available to scripts through the environment variables `$SCRIPT_TIMEOUT` and `$SCRIPT_DEADLINE`. The first is the timeout in seconds (including a fractional part) and the second is the Unix timestamp when the deadline will expire (also including a fractional part). A simple script could implement this timeout by starting with `timeout "$SCRIPT_TIMEOUT" cmd ...`. A more sophisticated program might want to use the deadline time to compute internal timeouts for various operation. If `enforced` is true, `script_exporter` attempts to enforce the timeout by killing the script's main process after the timeout expires. The default is to not enforce timeouts. If `max_timeout` is set for a script, it limits the maximum timeout value that requests can specify; a request that specifies a larger timeout will have the timeout adjusted down to the `max_timeout` value.
 
 The `discovery` configures the discovery parameters. If not defined, the exporter will use `Host:` header from the request to decide how to present a `target` to prometheus.
