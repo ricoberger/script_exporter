@@ -19,13 +19,13 @@ discovery:
 
 scripts:
   - name: test
-    script: ./examples/test.sh
+    script: sh /bin/examples/test.sh
   - name: ping
-    script: ./examples/ping.sh
+    script: sh /bin/examples/ping.sh
   - name: helloworld
-    script: ./examples/helloworld.sh test
+    script: sh /bin/examples/helloworld.sh test
   - name: showtimeout
-    script: ./examples/showtimeout.sh
+    script: sh /bin/examples/showtimeout.sh
     timeout:
       max_timeout: 60
   - name: sleep
@@ -33,6 +33,6 @@ scripts:
     timeout:
       enforced: true
   - name: docker
-    script: ./examples/docker.sh
+    script: sh /bin/examples/docker.sh
   - name: args
-    script: ./examples/args.sh test1 test2
+    script: sh /bin/examples/args.sh test1 test2
