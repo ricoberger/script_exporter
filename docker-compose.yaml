@@ -5,7 +5,7 @@ services:
       - '-config.file=/bin/examples/config.yaml'
       - '-web.listen-address=:9469'
     container_name: 'script_exporter'
-    image: 'ricoberger/script_exporter:v2.4.0'
+    image: 'ricoberger/script_exporter:v2.5.2'
     ports:
       - '9469:9469'
     volumes:
