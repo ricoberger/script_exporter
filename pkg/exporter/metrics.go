@@ -3,6 +3,7 @@ package exporter
 import (
 	"bufio"
 	"fmt"
+	"github.com/ricoberger/script_exporter/pkg/config"
 	"log"
 	"net/http"
 	"regexp"
@@ -46,20 +47,22 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	scriptStartTime := time.Now()
 
-	// Get and run script
-	script := e.Config.GetScript(scriptName)
-	if script == "" {
+	// Get program name and static arguments
+	runArgs, err := config.GetRunArgs(e.Config, scriptName)
+	if err != nil {
 		log.Printf("Script not found\n")
 		http.Error(w, "Script not found", http.StatusBadRequest)
 		return
 	}
+	// Append args passed via scrape query parameters
+	runArgs = append(runArgs, paramValues...)
 
 	// Get the timeout from either Prometheus's HTTP header or a URL
 	// query parameter, clamped to a maximum specified through the
 	// configuration file.
 	timeout := getTimeout(r, e.timeoutOffset, e.Config.GetMaxTimeout(scriptName))
 
-	output, exitCode, err := runScript(timeout, e.Config.GetTimeoutEnforced(scriptName), append(strings.Split(script, " "), paramValues...))
+	output, exitCode, err := runScript(timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs)
 	if err != nil {
 		log.Printf("Script failed: %s\n", err.Error())
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode)

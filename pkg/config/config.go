@@ -1,7 +1,10 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -14,7 +17,7 @@ type timeout struct {
 	Enforced   *bool    `yaml:"enforced"`
 }
 
-// Config represents the structur of the configuration file
+// Config represents the structure of the configuration file.
 type Config struct {
 	TLS struct {
 		Enabled bool   `yaml:"enabled"`
@@ -33,16 +36,22 @@ type Config struct {
 		SigningKey string `yaml:"signingKey"`
 	} `yaml:"bearerAuth"`
 
-	Scripts []struct {
-		Name    string `yaml:"name"`
-		Script  string `yaml:"script"`
-		Timeout timeout
-	} `yaml:"scripts"`
+	Scripts []ScriptConfig `yaml:"scripts"`
+
 	Discovery struct {
 		Host   string `yaml:"host"`
 		Port   string `yaml:"port"`
 		Scheme string `yaml:"scheme"`
 	} `yaml:"discovery"`
+}
+
+// ScriptConfig is the configuration for a single script.
+type ScriptConfig struct {
+	Name    string   `yaml:"name"`
+	Script  string   `yaml:"script"`
+	Command string   `yaml:"command"`
+	Args    []string `yaml:"args"`
+	Timeout timeout
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -60,15 +69,39 @@ func (c *Config) LoadConfig(file string) error {
 	return nil
 }
 
-// GetScript returns a script for a given name
-func (c *Config) GetScript(scriptName string) string {
+// ValidateConfig validates no contradictory config options are set.
+func ValidateConfig(c *Config) []error {
+	var errs []error
 	for _, script := range c.Scripts {
-		if script.Name == scriptName {
-			return script.Script
+		if script.Command == "" && script.Script == "" {
+			err := fmt.Errorf("script config %s has neither 'script' nor 'command'", script.Name)
+			errs = append(errs, err)
+		}
+		if script.Script != "" && (script.Command != "" || len(script.Args) > 0) {
+			err := fmt.Errorf("script config %s combines mutually exclusive settings "+
+				"'script' and 'command' / 'args'", script.Name)
+			errs = append(errs, err)
 		}
 	}
+	return errs
+}
 
-	return ""
+// GetRunArgs returns the parameters that will be passed to exec.Command to execute the script.
+// Errors if the scriptName doesn't exist in the config.
+func GetRunArgs(c *Config, scriptName string) ([]string, error) {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			if script.Script != "" {
+				// Deprecated: scrip.Script will be replaced by 'command' and 'args'.
+				return strings.Split(script.Script, " "), nil
+			}
+			var runArgs []string
+			runArgs = append(runArgs, script.Command)
+			runArgs = append(runArgs, script.Args...)
+			return runArgs, nil
+		}
+	}
+	return nil, errors.New("script doesn't exist in the config")
 }
 
 // GetMaxTimeout returns the max_timeout for a given script name.
