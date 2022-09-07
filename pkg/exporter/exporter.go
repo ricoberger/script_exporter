@@ -50,6 +50,15 @@ func NewExporter(configFile string, createToken bool, timeoutOffset float64, noa
 		log.Fatalln(err)
 	}
 
+	// Validate configuration
+	errs := config.ValidateConfig(e.Config)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Printf("Miconfiguration detected: %s", err)
+		}
+		log.Fatalln("Invalid configuration")
+	}
+
 	// Create bearer token
 	if createToken {
 		token, err := auth.CreateJWT(*e.Config)
