@@ -10,17 +10,17 @@ import (
 	"golang.org/x/sys/windows/svc"
 )
 
-//WindowsExporterService channel for service stop
+// WindowsExporterService channel for service stop
 type WindowsExporterService struct {
 	stopCh chan<- bool
 }
 
-//NewWindowsExporterService return new WindowsExporterService
+// NewWindowsExporterService return new WindowsExporterService
 func NewWindowsExporterService(ch chan<- bool) *WindowsExporterService {
 	return &WindowsExporterService{stopCh: ch}
 }
 
-//Execute run programm directly or for service
+// Execute run programm directly or for service
 func (s *WindowsExporterService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (ssec bool, errno uint32) {
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}

@@ -29,7 +29,7 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 
 - [test](http://localhost:9469/probe?script=test&prefix=test): Invalid values which are returned by the script are omitted.
 - [ping](http://localhost:9469/probe?script=ping&prefix=test&params=target&target=example.com): Pings the specified address in the `target` parameter and returns if it was successful or not.
-- [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in the `script` as label.
+- [helloworld](http://localhost:9469/probe?script=helloworld): Returns the specified argument in `args` as label.
 - [showtimeout](http://localhost:9469/probe?script=showtimeout&timeout=37): Reports whether or not the script is being run with a timeout from Prometheus, and what it is.
 - [docker](http://localhost:9469/probe?script=docker): Example using `docker exec` to return the number of files in a Docker container.
 - [args](http://localhost:9469/probe?script=args&params=arg3,arg4&arg3=test3&arg4=test4): Pass arguments to the script via the configuration file.
@@ -79,7 +79,9 @@ discovery:
 
 scripts:
   - name: <string>
-    script: <string>
+    command: <string>
+    args:
+      - <string>
     # optional
     timeout:
       # in seconds, 0 or negative means none
@@ -87,7 +89,7 @@ scripts:
       enforced: <boolean>
 ```
 
-The `name` of the script must be a valid Prometheus label value. The `script` string will be split on spaces to generate the program name and any fixed arguments, then any arguments specified from the `params` parameter will be appended. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
+The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
 **Note:** because the program is executed directly, shell constructions can't be used.
 For example:
@@ -166,12 +168,13 @@ scrape_configs:
 
 Optionally, HTTP service discovery can be configured like this:
 
-```
+```yaml
 - job_name: "exported-scripts"
   http_sd_configs:
   - url: http://prometheus-script-exporter:9469/discovery
 ```
-this will make prometheus reach to `/discovery` endpoint and collect the targets. Targets are all the scripts configured in the exporter.
+
+This will make prometheus reach to `/discovery` endpoint and collect the targets. Targets are all the scripts configured in the exporter.
 
 ## Breaking changes
 
@@ -179,9 +182,3 @@ Changes from version 1.3.0:
 
 - The command line flag ``-web.telemetry-path`` has been removed and its value is now always ``/probe``, which is a change from the previous default of ``/metrics``. The path ``/metrics`` now responds with Prometheus metrics for script_exporter itself.
 - The command line flag ``-config.shell`` has been removed. Programs are now always run directly.
-
-## Dependencies
-
-- [yaml.v2 - YAML support for the Go language](gopkg.in/yaml.v2)
-- [jwt-go - Golang implementation of JSON Web Tokens (JWT)](github.com/dgrijalva/jwt-go)
-- [prometheus client_golang - Prometheus instrumentation library for Go applications](https://github.com/prometheus/client_golang/)

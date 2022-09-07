@@ -12,10 +12,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ricoberger/script_exporter/pkg/auth"
 	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -35,7 +36,7 @@ type Exporter struct {
 	server        *http.Server
 }
 
-//NewExporter return an exporter object with all its variables
+// NewExporter return an exporter object with all its variables
 func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool) (e *Exporter) {
 	e = &Exporter{
 		Config:        &config.Config{},
@@ -73,9 +74,8 @@ func NewExporter(configFile string, createToken bool, timeoutOffset float64, noa
 	return e
 }
 
-//InitExporter initialize the exporter, parse flags, init server, etc
+// InitExporter initialize the exporter, parse flags, init server, etc
 func InitExporter() (e *Exporter) {
-
 	listenAddress := flag.String("web.listen-address", ":9469", "Address to listen on for web interface and telemetry.")
 	createToken := flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile := flag.String("config.file", "config.yaml", "Configuration `file` in YAML format.")
@@ -201,7 +201,7 @@ func InitExporter() (e *Exporter) {
 	return e
 }
 
-//Serve Start the http web server
+// Serve Start the http web server
 func (e *Exporter) Serve() {
 	if e.Config.TLS.Enabled {
 		log.Fatalln(e.server.ListenAndServeTLS(e.Config.TLS.Crt, e.Config.TLS.Key))
