@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/ricoberger/script_exporter/pkg/config"
+
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 func Auth(h http.Handler, exporterConfig config.Config) http.Handler {

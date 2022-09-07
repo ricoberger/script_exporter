@@ -3,16 +3,17 @@ package exporter
 import (
 	"bufio"
 	"fmt"
-	"github.com/ricoberger/script_exporter/pkg/config"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/ricoberger/script_exporter/pkg/config"
+	"github.com/ricoberger/script_exporter/pkg/version"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/ricoberger/script_exporter/pkg/version"
 )
 
 func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +70,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get ignore output parameter and only return success and duration seconds if 'true'
+	// Get ignore output parameter and only return success and duration seconds if 'output=ignore'
 	outputParam := params.Get("output")
 	if outputParam == "ignore" {
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 1, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode)
