@@ -35,7 +35,12 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 - [args](http://localhost:9469/probe?script=args&params=arg3,arg4&arg3=test3&arg4=test4): Pass arguments to the script via the configuration file.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the script exporter.
 
-You can also deploy the script_exporter to Kubernetes. An example Deployment file can be found here: [examples/kubernetes.yaml](./examples/kubernetes.yaml).
+You can also deploy the script_exporter to Kubernetes via Helm:
+
+```sh
+helm repo add ricoberger https://ricoberger.github.io/helm-charts
+helm install script-exporter ricoberger/script-exporter
+```
 
 ## Usage and configuration
 

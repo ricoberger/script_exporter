@@ -1,0 +1,34 @@
+name: Helm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'charts/script-exporter/**'
+
+jobs:
+  helm:
+    name: Helm Chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure Git
+        run: git config --global user.email "mail@ricoberger.de" && git config --global user.name "ricoberger"
+
+      - name: Package Helm Chart
+        run: helm package ./charts/script-exporter
+
+      - name: Clone Helm Repository
+        run: git clone https://github.com/ricoberger/helm-charts.git
+
+      - name: Update Helm Repository
+        run: mv script-exporter* ./helm-charts/ && helm repo index helm-charts/ --url https://ricoberger.github.io/helm-charts/
+
+      - name: Commit Changes
+        run: cd helm-charts/ && git add . && git commit -m "Add new release for script_exporter"
+
+      - name: Push Changes
+        run: cd helm-charts/ && git push https://ricoberger:${{ secrets.TOKEN }}@github.com/ricoberger/helm-charts.git
