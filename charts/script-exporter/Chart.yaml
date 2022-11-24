@@ -1,0 +1,6 @@
+apiVersion: v2
+name: script-exporter
+description: Prometheus exporter to execute scripts and collect metrics from the output or the exit status.
+type: application
+version: 0.1.0
+appVersion: v2.6.0

@@ -1,0 +1,177 @@
+# Default values for script_exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+## The number of Pods, which are created by the Deployment.
+## See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+##
+replicaCount: 1
+
+## Specify a list of image pull secrets, to avoid the DockerHub rate limit or to pull the script_exporter image from a
+## private registry.
+## See: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+##
+imagePullSecrets: []
+
+## Set the image which should be used for script_exporter.
+##
+image:
+  repository: ricoberger/script_exporter
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+## Specify security settings for the created Pods. To set the security settings for the script_exporter Container use
+## the corresponding "securityContext" field.
+## See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+##
+podSecurityContext: {}
+  # fsGroup: 2000
+
+## Specify security settings for the script_exporter Container. They override settings made at the Pod level via the
+## "podSecurityContext" when there is overlap.
+## See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+##
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+## We usually recommend not to specify default resources and to leave this as a conscious choice for the user. This
+## also increases chances charts run on environments with little resources, such as Minikube. If you do want to
+## specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after
+## 'resources:'.
+##
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+## Specify a map of key-value pairs, to assign the Pods to a specific set of nodes.
+## See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+##
+nodeSelector: {}
+
+## Specify the tolerations for the script_exporter Pods.
+## See: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+##
+tolerations: []
+
+## Specify a node affinity or inter-pod affinity / anti-affinity for an advanced scheduling of the script_exporter Pods.
+## See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+##
+affinity: {}
+
+## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
+## See: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+##
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: topology.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/name=hub
+
+## Specify additional volumes for the script_exporter deployment.
+## See: https://kubernetes.io/docs/concepts/storage/volumes/
+##
+volumes: []
+  # - name: scripts
+  #   configMap:
+  #     name: scripts
+
+## Specify additional volumeMounts for the script_exporter container.
+## See: https://kubernetes.io/docs/concepts/storage/volumes/
+##
+volumeMounts: []
+  # - name: scripts
+  #   mountPath: /scripts
+  #   readOnly: true
+
+## Specify additional environment variables for the script_exporter container.
+##
+env: []
+  # - name: MY_ENV_VAR
+  #   value: MY_ENV_VALUE
+
+## Specify additional labels and annotations for the created Pods.
+##
+podAnnotations: {}
+podLabels: {}
+
+## Set the type for the created service: ClusterIP, NodePort, LoadBalancer.
+## See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+##
+service:
+  type: ClusterIP
+
+  annotations: {}
+  labels: {}
+
+## Create a Service Monitor for the Prometheus Operator.
+## See: https://github.com/coreos/prometheus-operator
+##
+serviceMonitor:
+  enabled: false
+
+  ## Interval at which metrics should be scraped. Fallback to the Prometheus default unless specified.
+  ##
+  # interval: 10s
+
+  ## Timeout after which the scrape is ended. Fallback to the Prometheus default unless specified.
+  ##
+  # scrapeTimeout: 30s
+
+  ## Additional labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
+  ## See: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  ##
+  labels: {}
+
+  ## HonorLabels chooses the metric's labels on collisions with target labels.
+  ##
+  honorLabels: true
+
+  ## MetricRelabelConfigs to apply to samples before ingestion.
+  ##
+  metricRelabelings: []
+    # - action: keep
+    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+    #   sourceLabels: [__name__]
+
+  ## RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds relabelings for a few
+  ## standard Kubernetes fields and replaces original scrape job name with __tmp_prometheus_job_name.
+  ##
+  relabelings: []
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+
+## The configuration for the script_exporter as shown in
+## https://github.com/ricoberger/script_exporter/tree/main#usage-and-configuration
+##
+config: |
+  scripts:
+    - name: ping
+      command: /etc/script-exporter/ping.sh
+
+## A list of scripts which should be added to the container. It is also possible to add some scripts to the container,
+## via the "volumes" and "volumeMounts" values.
+##
+scripts:
+  ping.sh: |
+    #!/bin/bash
+    ping -c 3 $1 > /dev/null 2>&1
+    exit $?
