@@ -3,7 +3,7 @@ name: Continuous Delivery
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - v*
 
@@ -23,7 +23,7 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             DOCKER_TAG="${GITHUB_REF:10}"
           else
-            DOCKER_TAG="master"
+            DOCKER_TAG="main"
           fi
           echo ::set-output name=tag::${DOCKER_TAG}
 
