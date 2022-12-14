@@ -198,15 +198,7 @@ func InitExporter() (e *Exporter) {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
-			err := e.server.Shutdown(ctx)
-			if err != nil {
-				level.Error(logger).Log("msg", "Failed to shutdown script_exporter gracefully", "err", err)
-				os.Exit(1)
-			}
-
-			level.Info(logger).Log("msg", "Shutdown script_exporter...")
-			os.Exit(0)
-
+			e.server.Shutdown(ctx)
 		}
 	}()
 
@@ -232,18 +224,18 @@ func InitExporter() (e *Exporter) {
 
 // Serve Start the http web server
 func (e *Exporter) Serve() {
+	var err error
 	if e.Config.TLS.Enabled {
-		err := e.server.ListenAndServeTLS(e.Config.TLS.Crt, e.Config.TLS.Key)
-		if err != nil {
-			level.Error(e.Logger).Log("err", err)
-			os.Exit(1)
-		}
+		err = e.server.ListenAndServeTLS(e.Config.TLS.Crt, e.Config.TLS.Key)
 	} else {
-		err := e.server.ListenAndServe()
-		if err != nil {
-			level.Error(e.Logger).Log("err", err)
-			os.Exit(1)
-		}
+		err = e.server.ListenAndServe()
 	}
 
+	if err == http.ErrServerClosed {
+		level.Info(e.Logger).Log("msg", "Shutdown script_exporter gracefully")
+		os.Exit(0)
+	} else {
+		level.Error(e.Logger).Log("msg", "Failed to shutdown script_exporter gracefully", "err", err)
+		os.Exit(1)
+	}
 }
