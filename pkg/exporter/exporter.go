@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,8 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
+
+	"github.com/prometheus/common/promlog"
 	"github.com/ricoberger/script_exporter/pkg/auth"
 	"github.com/ricoberger/script_exporter/pkg/config"
+	customlog "github.com/ricoberger/script_exporter/pkg/log"
 	"github.com/ricoberger/script_exporter/pkg/version"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,40 +38,44 @@ type Exporter struct {
 	timeoutOffset float64
 	noargs        bool
 	server        *http.Server
+	Logger        log.Logger
 }
 
 // NewExporter return an exporter object with all its variables
-func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool) (e *Exporter) {
+func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger) (e *Exporter) {
 	e = &Exporter{
 		Config:        &config.Config{},
 		timeoutOffset: timeoutOffset,
 		noargs:        noargs,
 		server:        &http.Server{},
+		Logger:        logger,
 	}
 
 	// Load configuration file
 	err := e.Config.LoadConfig(configFile)
 	if err != nil {
-		log.Fatalln(err)
+		level.Error(logger).Log("err", err)
+		os.Exit(1)
 	}
 
 	// Validate configuration
 	errs := config.ValidateConfig(e.Config)
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Printf("Miconfiguration detected: %s", err)
+			level.Error(logger).Log("msg", "Miconfiguration detected", "err", err)
 		}
-		log.Fatalln("Invalid configuration")
+		level.Error(logger).Log("err", "Invalid configuration")
+		os.Exit(1)
 	}
 
 	// Create bearer token
 	if createToken {
 		token, err := auth.CreateJWT(*e.Config)
 		if err != nil {
-			log.Fatalf("Bearer token could not be created: %s\n", err.Error())
+			level.Error(logger).Log("msg", "Bearer token could not be created", "err", err)
+			os.Exit(1)
 		}
-
-		fmt.Printf("Bearer token: %s\n", token)
+		level.Info(logger).Log("msg", fmt.Sprintf("Bearer token: %s", token))
 		os.Exit(0)
 	}
 
@@ -80,22 +88,42 @@ func InitExporter() (e *Exporter) {
 	createToken := flag.Bool("create-token", false, "Create bearer token for authentication.")
 	configFile := flag.String("config.file", "config.yaml", "Configuration `file` in YAML format.")
 	timeoutOffset := flag.Float64("timeout-offset", 0.5, "Offset to subtract from Prometheus-supplied timeout in `seconds`.")
-	noargs := flag.Bool("noargs", false, "Resctict script to accept arguments, for security issues")
+	noargs := flag.Bool("noargs", false, "Restrict script to accept arguments, for security issues")
+	logLevel := flag.String("log.level", "info", "Only log messages with the given severity or above. One of: [debug, info, warn, error]")
+	logFormat := flag.String("log.format", "logfmt", "Output format of log messages. One of: [logfmt, json]")
 
 	flag.Parse()
+
+	allowedLevel := promlog.AllowedLevel{}
+	allowedLevel.Set(*logLevel)
+
+	allowedFormat := promlog.AllowedFormat{}
+	allowedFormat.Set(*logFormat)
+
+	promlogConfig := &promlog.Config{
+		Level:  &allowedLevel,
+		Format: &allowedFormat,
+	}
+	logger, err := customlog.InitLogger(promlogConfig)
+	if err != nil {
+		var logger log.Logger
+		level.Error(logger).Log("msg", "Failed to init custom logger", "err", err)
+		os.Exit(1)
+	}
 
 	// Avoid problems by erroring out if we have any remaining
 	// arguments, instead of silently ignoring them.
 	if len(flag.Args()) != 0 {
-		log.Fatalf("Usage error: program takes no arguments, only options.")
+		level.Error(logger).Log("msg", "Usage error: program takes no arguments, only options.")
+		os.Exit(1)
 	}
 
-	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs)
+	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs, logger)
 
 	// Start exporter
-	fmt.Printf("Starting server %s\n", version.Info())
-	fmt.Printf("Build context %s\n", version.BuildContext())
-	fmt.Printf("script_exporter listening on %s\n", *listenAddress)
+	level.Info(logger).Log("msg", "Starting script_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "build_context", version.BuildContext())
+	level.Info(logger).Log("msg", fmt.Sprintf("Listening on %s", *listenAddress))
 
 	// Authentication can be enabled via the 'basicAuth' or 'bearerAuth'
 	// section in the configuration. If authentication is enabled it's
@@ -156,7 +184,7 @@ func InitExporter() (e *Exporter) {
 
 	e.server = &http.Server{
 		Addr:    *listenAddress,
-		Handler: auth.Auth(router, *e.Config),
+		Handler: auth.Auth(router, *e.Config, logger),
 	}
 
 	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown
@@ -172,12 +200,13 @@ func InitExporter() (e *Exporter) {
 
 			err := e.server.Shutdown(ctx)
 			if err != nil {
-				log.Printf("Failed to shutdown script_exporter gracefully: %s\n", err.Error())
+				level.Error(logger).Log("msg", "Failed to shutdown script_exporter gracefully", "err", err)
 				os.Exit(1)
 			}
 
-			log.Printf("Shutdown script_exporter...\n")
+			level.Info(logger).Log("msg", "Shutdown script_exporter...")
 			os.Exit(0)
+
 		}
 	}()
 
@@ -191,9 +220,9 @@ func InitExporter() (e *Exporter) {
 		case <-hup:
 			err := e.Config.LoadConfig(*configFile)
 			if err != nil {
-				log.Printf("Could not reload configuration: %s\n", err.Error())
+				level.Error(logger).Log("msg", "Could not reload configuration", "err", err)
 			} else {
-				log.Printf("Configuration reloaded\n")
+				level.Info(logger).Log("msg", "Configuration reloaded")
 			}
 		}
 	}()
@@ -204,8 +233,17 @@ func InitExporter() (e *Exporter) {
 // Serve Start the http web server
 func (e *Exporter) Serve() {
 	if e.Config.TLS.Enabled {
-		log.Fatalln(e.server.ListenAndServeTLS(e.Config.TLS.Crt, e.Config.TLS.Key))
+		err := e.server.ListenAndServeTLS(e.Config.TLS.Crt, e.Config.TLS.Key)
+		if err != nil {
+			level.Error(e.Logger).Log("err", err)
+			os.Exit(1)
+		}
 	} else {
-		log.Fatalln(e.server.ListenAndServe())
+		err := e.server.ListenAndServe()
+		if err != nil {
+			level.Error(e.Logger).Log("err", err)
+			os.Exit(1)
+		}
 	}
+
 }

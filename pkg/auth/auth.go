@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-kit/log"
 	"github.com/ricoberger/script_exporter/pkg/config"
 
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
-func Auth(h http.Handler, exporterConfig config.Config) http.Handler {
+func Auth(h http.Handler, exporterConfig config.Config, logger log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Basic authentication
 		if exporterConfig.BasicAuth.Enabled {

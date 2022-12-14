@@ -7,7 +7,9 @@
 package main
 
 import (
-	"log"
+	"os"
+
+	"github.com/go-kit/log/level"
 
 	"github.com/ricoberger/script_exporter/pkg/exporter"
 	win "github.com/ricoberger/script_exporter/pkg/windows"
@@ -19,7 +21,8 @@ func main() {
 
 	isInteractive, err := svc.IsAnInteractiveSession()
 	if err != nil {
-		log.Fatal(err)
+		level.Error(e.Logger).Log("err", err)
+		os.Exit(1)
 	}
 
 	stopCh := make(chan bool)
@@ -27,7 +30,8 @@ func main() {
 		go func() {
 			err = svc.Run("Script Exporter", win.NewWindowsExporterService(stopCh))
 			if err != nil {
-				log.Fatalf("Failed to start service: %v", err)
+				level.Error(e.Logger).Log("msg", "Failed to start service", "err", err)
+				os.Exit(1)
 			}
 		}()
 	}
@@ -38,7 +42,7 @@ func main() {
 
 	for {
 		if <-stopCh {
-			log.Printf("Shutting down %s", "Script Exporter")
+			level.Info(e.Logger).Log("msg", "Shutting down Script Exporter")
 			break
 		}
 	}
