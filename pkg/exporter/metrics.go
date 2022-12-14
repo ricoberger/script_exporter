@@ -65,7 +65,10 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// configuration file.
 	timeout := getTimeout(r, e.timeoutOffset, e.Config.GetMaxTimeout(scriptName))
 
-	output, exitCode, err := runScript(scriptName, e.Logger, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs)
+	// Get env vars
+	runEnv := e.Config.GetRunEnv(scriptName)
+
+	output, exitCode, err := runScript(scriptName, e.Logger, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode)
 		return

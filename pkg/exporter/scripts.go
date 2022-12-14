@@ -36,7 +36,7 @@ import (
 // be subject to abrupt termination regardless of any 'enforced:'
 // settings. Right now, abrupt termination requires opting in in
 // the configuration file.
-func runScript(name string, logger log.Logger, timeout float64, enforced bool, args []string) (string, int, error) {
+func runScript(name string, logger log.Logger, timeout float64, enforced bool, args []string, env []string) (string, int, error) {
 	// We go through a great deal of work to get a deadline with
 	// fractional seconds that we can expose in an environment
 	// variable. However, this is pretty much necessary since
@@ -57,8 +57,14 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 	}
 	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
-	if timeout > 0 {
+	// Set environments variables
+	if len(env) > 0 {
+		cmd.Env = env
+	} else {
 		cmd.Env = os.Environ()
+	}
+
+	if timeout > 0 {
 		// Three digits of fractional precision in the seconds and
 		// the deadline are probably excessive, given that we're
 		// running external programs. But better slightly excessive
