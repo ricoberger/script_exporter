@@ -58,10 +58,9 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
 	// Set environments variables
+	cmd.Env = os.Environ()
 	if len(env) > 0 {
-		cmd.Env = env
-	} else {
-		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, env...)
 	}
 
 	if timeout > 0 {
