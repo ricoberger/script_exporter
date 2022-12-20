@@ -1,14 +1,18 @@
 package exporter
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -32,10 +36,7 @@ import (
 // be subject to abrupt termination regardless of any 'enforced:'
 // settings. Right now, abrupt termination requires opting in in
 // the configuration file.
-func runScript(timeout float64, enforced bool, args []string) (string, int, error) {
-	var output []byte
-	var err error
-
+func runScript(name string, logger log.Logger, timeout float64, enforced bool, args []string, env []string) (string, int, error) {
 	// We go through a great deal of work to get a deadline with
 	// fractional seconds that we can expose in an environment
 	// variable. However, this is pretty much necessary since
@@ -56,8 +57,13 @@ func runScript(timeout float64, enforced bool, args []string) (string, int, erro
 	}
 	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
+	// Set environments variables
+	cmd.Env = os.Environ()
+	if len(env) > 0 {
+		cmd.Env = append(cmd.Env, env...)
+	}
+
 	if timeout > 0 {
-		cmd.Env = os.Environ()
 		// Three digits of fractional precision in the seconds and
 		// the deadline are probably excessive, given that we're
 		// running external programs. But better slightly excessive
@@ -71,8 +77,19 @@ func runScript(timeout float64, enforced bool, args []string) (string, int, erro
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SCRIPT_TIMEOUT_ENFORCED=%d", ienforced))
 	}
 
-	output, err = cmd.Output()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
 	if err != nil {
+		level.Error(logger).Log(
+			"msg", fmt.Sprintf("Script '%s' execution failed", name),
+			"cmd", strings.Join(args, " "),
+			"stdout", stdout.String(),
+			"stderr", stderr.String(),
+			"env", strings.Join(cmd.Env, " "),
+			"err", err,
+		)
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return "", exitError.ExitCode(), err
 		}
@@ -80,7 +97,14 @@ func runScript(timeout float64, enforced bool, args []string) (string, int, erro
 		return "", -1, err
 	}
 
-	return string(output), 0, nil
+	level.Debug(logger).Log(
+		"msg", fmt.Sprintf("Script '%s' execution succeed", name),
+		"cmd", strings.Join(args, " "),
+		"stdout", stdout.String(),
+		"stderr", stderr.String(),
+		"env", strings.Join(cmd.Env, " "),
+	)
+	return stdout.String(), 0, nil
 }
 
 // getTimeout gets the Prometheus scrape timeout (in seconds) from the

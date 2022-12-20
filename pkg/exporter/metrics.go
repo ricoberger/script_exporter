@@ -3,12 +3,12 @@ package exporter
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/go-kit/log/level"
 	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
 
@@ -21,8 +21,9 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	scriptName := params.Get("script")
 	if scriptName == "" {
-		log.Printf("Script parameter is missing\n")
-		http.Error(w, "Script parameter is missing", http.StatusBadRequest)
+		errorStr := "Script parameter is missing"
+		level.Error(e.Logger).Log("err", errorStr)
+		http.Error(w, errorStr, http.StatusBadRequest)
 		return
 	}
 
@@ -51,8 +52,9 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get program name and static arguments
 	runArgs, err := config.GetRunArgs(e.Config, scriptName)
 	if err != nil {
-		log.Printf("Script not found\n")
-		http.Error(w, "Script not found", http.StatusBadRequest)
+		errorStr := fmt.Sprintf("Script '%s' not found", scriptName)
+		level.Error(e.Logger).Log("err", errorStr)
+		http.Error(w, errorStr, http.StatusBadRequest)
 		return
 	}
 	// Append args passed via scrape query parameters
@@ -63,9 +65,11 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// configuration file.
 	timeout := getTimeout(r, e.timeoutOffset, e.Config.GetMaxTimeout(scriptName))
 
-	output, exitCode, err := runScript(timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs)
+	// Get env vars
+	runEnv := e.Config.GetRunEnv(scriptName)
+
+	output, exitCode, err := runScript(scriptName, e.Logger, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
-		log.Printf("Script failed: %s\n", err.Error())
 		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, 0, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode)
 		return
 	}

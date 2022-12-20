@@ -88,6 +88,8 @@ scripts:
     args:
       - <string>
     # optional
+    env:
+      <key>: <value>
     timeout:
       # in seconds, 0 or negative means none
       max_timeout: <float>
@@ -95,6 +97,19 @@ scripts:
 ```
 
 The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
+
+The optional `env` hash allow to run the script with custom environment variables.
+
+Example: set proxy env vars for test_env script
+
+```yaml
+scripts:
+  - name: test_env
+    command: /tmp/my_script.sh
+    env:
+      http_proxy: http://proxy.example.com:3128
+      https_proxy: http://proxy.example.com:3128
+```
 
 **Note:** because the program is executed directly, shell constructions can't be used.
 For example:

@@ -51,6 +51,7 @@ type ScriptConfig struct {
 	Script  string   `yaml:"script"`
 	Command string   `yaml:"command"`
 	Args    []string `yaml:"args"`
+	Env     []string `yaml:"env"`
 	Timeout timeout
 }
 
@@ -102,6 +103,19 @@ func GetRunArgs(c *Config, scriptName string) ([]string, error) {
 		}
 	}
 	return nil, errors.New("script doesn't exist in the config")
+}
+
+// GetRunEnv returns the env variables for a given script name.
+func (c *Config) GetRunEnv(scriptName string) []string {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			if len(script.Env) > 0 {
+				return script.Env
+			}
+			break
+		}
+	}
+	return nil
 }
 
 // GetMaxTimeout returns the max_timeout for a given script name.
