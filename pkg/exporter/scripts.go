@@ -91,10 +91,10 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 			"err", err,
 		)
 		if exitError, ok := err.(*exec.ExitError); ok {
-			return "", exitError.ExitCode(), err
+			return string(output), exitError.ExitCode(), err
 		}
 
-		return "", -1, err
+		return string(output), -1, err
 	}
 
 	level.Debug(logger).Log(
