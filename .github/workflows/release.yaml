@@ -1,40 +1,25 @@
 name: Release
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  release:
-    runs-on: ubuntu-20.04
-    name: Release
+  changelog:
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Changelog
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Update Changelog
+        uses: release-drafter/release-drafter@v5
         with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19
-
-      - name: Get dependencies
-        run: go mod download
-
-      - name: Test
-        run: go test ./...
-
-      - name: Build
-        run: make release
-
-      - name: Upload
-        run: |
-          ./upload.sh ./bin/script_exporter-darwin-amd64 application/x-binary
-          ./upload.sh ./bin/script_exporter-darwin-arm64 application/x-binary
-          ./upload.sh ./bin/script_exporter-linux-amd64 application/x-binary
-          ./upload.sh ./bin/script_exporter-linux-armv7 application/x-binary
-          ./upload.sh ./bin/script_exporter-linux-arm64 application/x-binary
-          ./upload.sh ./bin/script_exporter-windows-amd64.exe application/x-binary
+          config-name: release.yaml
+          disable-autolabeler: true
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
