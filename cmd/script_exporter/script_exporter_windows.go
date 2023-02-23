@@ -19,14 +19,14 @@ import (
 func main() {
 	e := exporter.InitExporter()
 
-	isInteractive, err := svc.IsAnInteractiveSession()
+	isService, err := svc.IsWindowsService()
 	if err != nil {
 		level.Error(e.Logger).Log("err", err)
 		os.Exit(1)
 	}
 
 	stopCh := make(chan bool)
-	if !isInteractive {
+	if isService {
 		go func() {
 			err = svc.Run("Script Exporter", win.NewWindowsExporterService(stopCh))
 			if err != nil {
