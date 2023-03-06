@@ -143,6 +143,7 @@ func InitExporter() (e *Exporter) {
 			port = "9469"
 		}
 		scheme := "http"
+		path   := ""
 		if len(e.Config.Discovery.Host) > 0 {
 			host = e.Config.Discovery.Host
 		}
@@ -152,11 +153,14 @@ func InitExporter() (e *Exporter) {
 		if len(e.Config.Discovery.Scheme) > 0 {
 			scheme = e.Config.Discovery.Scheme
 		}
+		if len(e.Config.Discovery.Path) > 0 {
+			path = e.Config.Discovery.Path
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`[ `))
 		for idx, script := range e.Config.Scripts {
 			w.Write([]byte(`{"targets": ["` + host + `:` + port + `"],`))
-			w.Write([]byte(`"labels":{"__scheme__":"` + scheme + `","__metrics_path__":"/probe","__param_script":"` + script.Name + `"}}`))
+			w.Write([]byte(`"labels":{"__scheme__":"` + scheme + `","__metrics_path__":"` + path + `/probe","__param_script":"` + script.Name + `"}}`))
 			if idx+1 < len(e.Config.Scripts) {
 				w.Write([]byte(`,`))
 			}
