@@ -48,12 +48,13 @@ type Config struct {
 
 // ScriptConfig is the configuration for a single script.
 type ScriptConfig struct {
-	Name    string   `yaml:"name"`
-	Script  string   `yaml:"script"`
-	Command string   `yaml:"command"`
-	Args    []string `yaml:"args"`
-	Env     []string `yaml:"env"`
-	Timeout timeout
+	Name               string   `yaml:"name"`
+	Script             string   `yaml:"script"`
+	Command            string   `yaml:"command"`
+	Args               []string `yaml:"args"`
+	Env                []string `yaml:"env"`
+	IgnoreOutputOnFail bool     `yaml:"ignoreOutputOnFail"`
+	Timeout            timeout
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -117,6 +118,16 @@ func (c *Config) GetRunEnv(scriptName string) []string {
 		}
 	}
 	return nil
+}
+
+// GetIgnoreOutputOnFail returns the ignoreOutputOnFail parameter for the provided script.
+func (c *Config) GetIgnoreOutputOnFail(scriptName string) bool {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			return script.IgnoreOutputOnFail
+		}
+	}
+	return false
 }
 
 // GetMaxTimeout returns the max_timeout for a given script name.

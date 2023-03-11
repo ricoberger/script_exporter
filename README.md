@@ -90,6 +90,9 @@ scripts:
     # optional
     env:
       <key>: <value>
+    # by default the output will also be parsed when the script fails,
+    # this can be changed by setting this option to true
+    ignoreOutputOnFail: <boolean>
     timeout:
       # in seconds, 0 or negative means none
       max_timeout: <float>
