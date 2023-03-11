@@ -1,13 +1,13 @@
 module github.com/ricoberger/script_exporter
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-kit/log v0.2.1
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.39.0
-	golang.org/x/sys v0.4.0
+	github.com/prometheus/common v0.42.0
+	golang.org/x/sys v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
