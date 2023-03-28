@@ -110,21 +110,24 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 // getTimeout gets the Prometheus scrape timeout (in seconds) from the
 // HTTP request, either from a 'timeout' query parameter or from the
 // special HTTP header that Prometheus inserts on scrapes, and returns
-// it or 0 on error.  If there is a timeout, it is modified down by
-// the offset.
+// it. If there is a timeout, it is modified down by the offset.
+//
+// If the there is an error or no timeout is specified, it returns
+// the maxTimeout configured for the script (the default value for this
+// is 0, which means no timeout)
 func getTimeout(r *http.Request, offset float64, maxTimeout float64) float64 {
 	v := r.URL.Query().Get("timeout")
 	if v == "" {
 		v = r.Header.Get("X-Prometheus-Scrape-Timeout-Seconds")
 	}
 	if v == "" {
-		return 0
+		return maxTimeout
 	}
 	ts, err := strconv.ParseFloat(v, 64)
 	adjusted := ts - offset
 	switch {
 	case err != nil:
-		return 0
+		return maxTimeout
 	case maxTimeout < adjusted && maxTimeout > 0:
 		return maxTimeout
 	case adjusted <= 0:
