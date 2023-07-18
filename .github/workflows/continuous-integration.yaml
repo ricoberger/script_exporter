@@ -14,7 +14,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -30,42 +30,42 @@ jobs:
         run: make release
 
       - name: Upload Artifacts (darwin-amd64)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-darwin-amd64
           path: bin/script_exporter-darwin-amd64
           if-no-files-found: error
 
       - name: Upload Artifacts (darwin-arm64)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-darwin-arm64
           path: bin/script_exporter-darwin-arm64
           if-no-files-found: error
 
       - name: Upload Artifacts (linux-amd64)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-linux-amd64
           path: bin/script_exporter-linux-amd64
           if-no-files-found: error
 
       - name: Upload Artifacts (linux-armv7)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-linux-armv7
           path: bin/script_exporter-linux-armv7
           if-no-files-found: error
 
       - name: Upload Artifacts (linux-arm64)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-linux-arm64
           path: bin/script_exporter-linux-arm64
           if-no-files-found: error
 
       - name: Upload Artifacts (windows-amd64.exe)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: script_exporter-windows-amd64.exe
           path: bin/script_exporter-windows-amd64.exe
