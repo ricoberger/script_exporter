@@ -48,12 +48,12 @@ type Config struct {
 
 // ScriptConfig is the configuration for a single script.
 type ScriptConfig struct {
-	Name               string   `yaml:"name"`
-	Script             string   `yaml:"script"`
-	Command            string   `yaml:"command"`
-	Args               []string `yaml:"args"`
-	Env                []string `yaml:"env"`
-	IgnoreOutputOnFail bool     `yaml:"ignoreOutputOnFail"`
+	Name               string            `yaml:"name"`
+	Script             string            `yaml:"script"`
+	Command            string            `yaml:"command"`
+	Args               []string          `yaml:"args"`
+	Env                map[string]string `yaml:"env"`
+	IgnoreOutputOnFail bool              `yaml:"ignoreOutputOnFail"`
 	Timeout            timeout
 }
 
@@ -108,7 +108,7 @@ func GetRunArgs(c *Config, scriptName string) ([]string, error) {
 }
 
 // GetRunEnv returns the env variables for a given script name.
-func (c *Config) GetRunEnv(scriptName string) []string {
+func (c *Config) GetRunEnv(scriptName string) map[string]string {
 	for _, script := range c.Scripts {
 		if script.Name == scriptName {
 			if len(script.Env) > 0 {
