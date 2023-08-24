@@ -188,7 +188,7 @@ func TestConfig_GetRunArgs(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			runArgs, err := GetRunArgs(&tc.config, scriptName)
+			runArgs, err := tc.config.GetRunArgs(scriptName)
 			if err != nil && !tc.err {
 				t.Errorf("Got unexpected error %v", err)
 			}

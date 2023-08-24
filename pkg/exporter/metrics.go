@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/log/level"
-	"github.com/ricoberger/script_exporter/pkg/config"
 	"github.com/ricoberger/script_exporter/pkg/version"
 
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -49,11 +48,23 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	scriptStartTime := time.Now()
 
+	// When the script configuration contains a cache duration we use the result from the cache when the entry is not
+	// stale.
+	cacheDuration := e.Config.GetCacheDuration(scriptName)
+	if cacheDuration != nil {
+		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, *cacheDuration)
+		if formattedOutput != nil && successStatus != nil && exitCode != nil {
+			level.Debug(e.Logger).Log("msg", "Returning cached result", "script", scriptName)
+			fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, *formattedOutput)
+			return
+		}
+	}
+
 	// Get program name and static arguments
-	runArgs, err := config.GetRunArgs(e.Config, scriptName)
+	runArgs, err := e.Config.GetRunArgs(scriptName)
 	if err != nil {
 		errorStr := fmt.Sprintf("Script '%s' not found", scriptName)
-		level.Error(e.Logger).Log("err", errorStr)
+		level.Error(e.Logger).Log("err", errorStr, "script", scriptName)
 		http.Error(w, errorStr, http.StatusBadRequest)
 		return
 	}
@@ -74,7 +85,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	output, exitCode, err := runScript(scriptName, e.Logger, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
 		successStatus = 0
-		level.Error(e.Logger).Log("msg", "Run script failed", "err", err)
+		level.Error(e.Logger).Log("msg", "Run script failed", "err", err, "script", scriptName)
 	}
 
 	// Get ignore output parameter and only return success and duration seconds if 'output=ignore'. If the script failed
@@ -91,7 +102,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	regex2, _ := regexp.Compile("^" + prefix + "\\w*(?:{.*})?\\s+[0-9|\\.]*")
 	regexSharp, _ := regexp.Compile("^(# *(?:TYPE|HELP) +)")
 
-	var formatedOutput string
+	var formattedOutput string
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	for scanner.Scan() {
 		metric := strings.Trim(scanner.Text(), " ")
@@ -100,9 +111,9 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 			// Do nothing
 		} else if metric[0:1] == "#" {
 			if prefix != "" {
-				formatedOutput += regexSharp.ReplaceAllString(metric, "${1}"+prefix) + "\n"
+				formattedOutput += regexSharp.ReplaceAllString(metric, "${1}"+prefix) + "\n"
 			} else {
-				formatedOutput += fmt.Sprintf("%s\n", metric)
+				formattedOutput += fmt.Sprintf("%s\n", metric)
 			}
 		} else {
 			metric = fmt.Sprintf("%s%s", prefix, metric)
@@ -110,13 +121,20 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 			if len(metrics) == 1 {
 				value := strings.Replace(metric[len(metrics[0]):], ",", ".", -1)
 				if regex2.MatchString(metrics[0] + value) {
-					formatedOutput += fmt.Sprintf("%s%s\n", metrics[0], value)
+					formattedOutput += fmt.Sprintf("%s%s\n", metrics[0], value)
 				}
 			}
 		}
 	}
 
-	fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formatedOutput)
+	// If the script configuration has a cache duration we have to cache the output and exit code, so we can reuse it
+	// later.
+	if cacheDuration != nil {
+		level.Debug(e.Logger).Log("msg", "Saving result to cache", "script", scriptName)
+		setCacheResult(scriptName, formattedOutput, successStatus, exitCode)
+	}
+
+	fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formattedOutput)
 }
 
 // SetupMetrics creates and registers our internal Prometheus metrics,

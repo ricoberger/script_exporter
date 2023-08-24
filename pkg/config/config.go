@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -54,7 +55,8 @@ type ScriptConfig struct {
 	Args               []string          `yaml:"args"`
 	Env                map[string]string `yaml:"env"`
 	IgnoreOutputOnFail bool              `yaml:"ignoreOutputOnFail"`
-	Timeout            timeout
+	Timeout            timeout           `yaml:"timeout"`
+	CacheDuration      string            `yaml:"cacheDuration"`
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -91,7 +93,7 @@ func ValidateConfig(c *Config) []error {
 
 // GetRunArgs returns the parameters that will be passed to exec.Command to execute the script.
 // Errors if the scriptName doesn't exist in the config.
-func GetRunArgs(c *Config, scriptName string) ([]string, error) {
+func (c *Config) GetRunArgs(scriptName string) ([]string, error) {
 	for _, script := range c.Scripts {
 		if script.Name == scriptName {
 			if script.Script != "" {
@@ -155,4 +157,24 @@ func (c *Config) GetTimeoutEnforced(scriptName string) bool {
 		}
 	}
 	return false
+}
+
+// GetCacheDuration returns the cache time for a given script name. If the script doesn't have a cache time configured,
+// it returns nil.
+func (c *Config) GetCacheDuration(scriptName string) *time.Duration {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			if script.CacheDuration == "" {
+				return nil
+			}
+
+			parsedCacheDuration, err := time.ParseDuration(script.CacheDuration)
+			if err != nil {
+				return nil
+			}
+
+			return &parsedCacheDuration
+		}
+	}
+	return nil
 }
