@@ -23,6 +23,7 @@ scripts:
     command: ./examples/test.sh
   - name: ping
     command: ./examples/ping.sh
+    cacheDuration: 1m
   - name: helloworld
     command: ./examples/helloworld.sh
     args:
