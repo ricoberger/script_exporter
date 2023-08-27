@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-kit/log"
 	"github.com/ricoberger/script_exporter/pkg/config"
 
+	"github.com/go-kit/log"
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 

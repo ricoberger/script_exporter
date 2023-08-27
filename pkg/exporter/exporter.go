@@ -11,16 +11,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
-
-	"github.com/prometheus/common/promlog"
 	"github.com/ricoberger/script_exporter/pkg/auth"
 	"github.com/ricoberger/script_exporter/pkg/config"
 	customlog "github.com/ricoberger/script_exporter/pkg/log"
 	"github.com/ricoberger/script_exporter/pkg/version"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promlog"
 )
 
 const (
@@ -34,7 +33,7 @@ const (
 )
 
 type Exporter struct {
-	Config        *config.Config
+	Config        config.Config
 	timeoutOffset float64
 	noargs        bool
 	server        *http.Server
@@ -44,11 +43,13 @@ type Exporter struct {
 // NewExporter return an exporter object with all its variables
 func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger) (e *Exporter) {
 	e = &Exporter{
-		Config:        &config.Config{},
+		Config:        config.Config{},
 		timeoutOffset: timeoutOffset,
 		noargs:        noargs,
-		server:        &http.Server{},
-		Logger:        logger,
+		server: &http.Server{
+			ReadHeaderTimeout: 10 * time.Second,
+		},
+		Logger: logger,
 	}
 
 	// Load configuration file
@@ -70,7 +71,7 @@ func NewExporter(configFile string, createToken bool, timeoutOffset float64, noa
 
 	// Create bearer token
 	if createToken {
-		token, err := auth.CreateJWT(*e.Config)
+		token, err := auth.CreateJWT(e.Config)
 		if err != nil {
 			level.Error(logger).Log("msg", "Bearer token could not be created", "err", err)
 			os.Exit(1)
@@ -143,7 +144,7 @@ func InitExporter() (e *Exporter) {
 			port = "9469"
 		}
 		scheme := "http"
-		path   := ""
+		path := ""
 		if len(e.Config.Discovery.Host) > 0 {
 			host = e.Config.Discovery.Host
 		}
@@ -187,8 +188,9 @@ func InitExporter() (e *Exporter) {
 	})
 
 	e.server = &http.Server{
-		Addr:    *listenAddress,
-		Handler: auth.Auth(router, *e.Config, logger),
+		Addr:              *listenAddress,
+		ReadHeaderTimeout: 10 * time.Second,
+		Handler:           auth.Auth(router, e.Config, logger),
 	}
 
 	// Listen for SIGINT and SIGTERM signals and try to gracefully shutdown
@@ -197,13 +199,12 @@ func InitExporter() (e *Exporter) {
 	go func() {
 		term := make(chan os.Signal, 1)
 		signal.Notify(term, os.Interrupt, syscall.SIGTERM)
-		select {
-		case <-term:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
 
-			e.server.Shutdown(ctx)
-		}
+		<-term
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		e.server.Shutdown(ctx)
 	}()
 
 	// Listen for SIGHUP signal and reload the configuration. If the
@@ -212,14 +213,13 @@ func InitExporter() (e *Exporter) {
 	go func() {
 		hup := make(chan os.Signal, 1)
 		signal.Notify(hup, syscall.SIGHUP)
-		select {
-		case <-hup:
-			err := e.Config.LoadConfig(*configFile)
-			if err != nil {
-				level.Error(logger).Log("msg", "Could not reload configuration", "err", err)
-			} else {
-				level.Info(logger).Log("msg", "Configuration reloaded")
-			}
+
+		<-hup
+		err := e.Config.LoadConfig(*configFile)
+		if err != nil {
+			level.Error(logger).Log("msg", "Could not reload configuration", "err", err)
+		} else {
+			level.Info(logger).Log("msg", "Configuration reloaded")
 		}
 	}()
 

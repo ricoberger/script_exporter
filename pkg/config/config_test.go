@@ -124,7 +124,7 @@ func TestConfigValidation(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			errs := ValidateConfig(&tc.config)
+			errs := ValidateConfig(tc.config)
 			if len(errs) != tc.expectedErrors {
 				t.Errorf("Expected %d errors, got %d", tc.expectedErrors, len(errs))
 			}

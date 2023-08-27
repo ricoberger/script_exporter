@@ -9,10 +9,10 @@ package main
 import (
 	"os"
 
-	"github.com/go-kit/log/level"
-
 	"github.com/ricoberger/script_exporter/pkg/exporter"
 	win "github.com/ricoberger/script_exporter/pkg/windows"
+
+	"github.com/go-kit/log/level"
 	"golang.org/x/sys/windows/svc"
 )
 

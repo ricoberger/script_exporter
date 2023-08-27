@@ -20,8 +20,11 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
 
-      - name: Get dependencies
-        run: go mod download
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: --config=./.github/golangci.yaml
+          skip-cache: true
 
       - name: Test
         run: go test ./...
