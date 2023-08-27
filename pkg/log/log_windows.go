@@ -7,11 +7,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/prometheus/common/promlog"
-
-	"github.com/go-kit/log/level"
-
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
+	"github.com/prometheus/common/promlog"
 	"golang.org/x/sys/windows/svc"
 	el "golang.org/x/sys/windows/svc/eventlog"
 )

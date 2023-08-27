@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -61,7 +61,7 @@ type ScriptConfig struct {
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
 func (c *Config) LoadConfig(file string) error {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (c *Config) LoadConfig(file string) error {
 }
 
 // ValidateConfig validates no contradictory config options are set.
-func ValidateConfig(c *Config) []error {
+func ValidateConfig(c Config) []error {
 	var errs []error
 	for _, script := range c.Scripts {
 		if script.Command == "" && script.Script == "" {

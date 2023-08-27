@@ -55,6 +55,8 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 		ctx, cancel = context.WithDeadline(context.Background(), deadline)
 		defer cancel()
 	}
+
+	//nolint:gosec
 	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
 	// Set environments variables
