@@ -52,7 +52,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// stale.
 	cacheDuration := e.Config.GetCacheDuration(scriptName)
 	if cacheDuration != nil {
-		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, *cacheDuration)
+		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, paramValues, *cacheDuration)
 		if formattedOutput != nil && successStatus != nil && exitCode != nil {
 			level.Debug(e.Logger).Log("msg", "Returning cached result", "script", scriptName)
 			fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, *formattedOutput)
@@ -131,7 +131,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// later.
 	if cacheDuration != nil {
 		level.Debug(e.Logger).Log("msg", "Saving result to cache", "script", scriptName)
-		setCacheResult(scriptName, formattedOutput, successStatus, exitCode)
+		setCacheResult(scriptName, paramValues, formattedOutput, successStatus, exitCode)
 	}
 
 	fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formattedOutput)
