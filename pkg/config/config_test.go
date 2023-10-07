@@ -121,6 +121,48 @@ func TestConfigValidation(t *testing.T) {
 			expectedErrors: 1,
 			description:    "Neither script nor command",
 		},
+		{
+			config: Config{
+				Scripts: []ScriptConfig{
+					{
+						Name:    "unittest",
+						Command: "unit test command",
+						Discovery: scriptDiscovery{
+							Params: map[string]string{
+								"key1": "value1",
+							},
+							Prefix:         "prefix",
+							ScrapeInterval: "1m",
+							ScrapeTimeout:  "1m",
+						},
+					},
+				},
+			},
+			expectedErrors: 0,
+			description:    "Valid config with script discovery",
+		},
+		{
+			config: Config{
+				Scripts: []ScriptConfig{
+					{
+						Name:    "unittest",
+						Command: "unit test command",
+						Discovery: scriptDiscovery{
+							Params: map[string]string{
+								"abc":     "value",
+								"params":  "value",
+								"prefix":  "value",
+								"script":  "value",
+								"test":    "value",
+								"timeout": "value",
+							},
+						},
+					},
+				},
+			},
+			expectedErrors: 4,
+			description:    "Invalid params names in script discovery",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
