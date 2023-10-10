@@ -10,6 +10,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Discovery parameters for every script.
+type scriptDiscovery struct {
+	Params         map[string]string `yaml:"params"`
+	Prefix         string            `yaml:"prefix"`
+	ScrapeInterval string            `yaml:"scrape_interval"`
+	ScrapeTimeout  string            `yaml:"scrape_timeout"`
+}
+
 // Making MaxTimeout a pointer to a float64 allows us to tell the
 // difference between an explicit 0 and an unconfigured setting.
 // Ditto for Enforced.
@@ -57,6 +65,7 @@ type ScriptConfig struct {
 	IgnoreOutputOnFail bool              `yaml:"ignoreOutputOnFail"`
 	Timeout            timeout           `yaml:"timeout"`
 	CacheDuration      string            `yaml:"cacheDuration"`
+	Discovery          scriptDiscovery   `yaml:"discovery"`
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -86,6 +95,15 @@ func ValidateConfig(c Config) []error {
 			err := fmt.Errorf("script config %s combines mutually exclusive settings "+
 				"'script' and 'command' / 'args'", script.Name)
 			errs = append(errs, err)
+		}
+		reserved := []string{"params", "prefix", "script", "timeout"}
+		for _, param := range reserved {
+			if _, ok := script.Discovery.Params[param]; ok {
+				err := fmt.Errorf("script config %s contains "+
+					"reserved '"+param+"' in "+
+					"'discovery:params'", script.Name)
+				errs = append(errs, err)
+			}
 		}
 	}
 	return errs
@@ -177,4 +195,22 @@ func (c *Config) GetCacheDuration(scriptName string) *time.Duration {
 		}
 	}
 	return nil
+}
+
+// GetDiscoveryScrapeInterval returns the scrape_interval if it is valid duration, otherwise empty string.
+func (sc *ScriptConfig) GetDiscoveryScrapeInterval() string {
+	_, err := time.ParseDuration(sc.Discovery.ScrapeInterval)
+	if err != nil {
+		return ""
+	}
+	return sc.Discovery.ScrapeInterval
+}
+
+// GetDiscoveryScrapeTimeout returns the scrape_timeout if it is valid duration, otherwise empty string.
+func (sc *ScriptConfig) GetDiscoveryScrapeTimeout() string {
+	_, err := time.ParseDuration(sc.Discovery.ScrapeTimeout)
+	if err != nil {
+		return ""
+	}
+	return sc.Discovery.ScrapeTimeout
 }

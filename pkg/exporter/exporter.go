@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -160,8 +161,35 @@ func InitExporter() (e *Exporter) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`[ `))
 		for idx, script := range e.Config.Scripts {
+			// Prepare script discovery labels
+			prefix := script.Discovery.Prefix
+			si := script.GetDiscoveryScrapeInterval()
+			st := script.GetDiscoveryScrapeTimeout()
+			labels := ""
+			params := make([]string, 0)
+			for key, value := range script.Discovery.Params {
+				json_value, err := json.Marshal(value)
+				if err == nil {
+					params = append(params, key)
+					labels += `,"__param_` + key + `":` + string(json_value)
+				}
+			}
+			if len(params) > 0 {
+				labels += `,"__param_params":"` + strings.Join(params[:], ",") + `"`
+			}
+			if len(prefix) > 0 {
+				labels += `,"__param_prefix":"` + prefix + `"`
+			}
+			if len(si) > 0 {
+				labels += `,"__scrape_interval__":"` + si + `"`
+			}
+			if len(st) > 0 {
+				labels += `,"__scrape_timeout__":"` + st + `"`
+			}
+
+			// Print script discovery
 			w.Write([]byte(`{"targets": ["` + host + `:` + port + `"],`))
-			w.Write([]byte(`"labels":{"__scheme__":"` + scheme + `","__metrics_path__":"` + path + `/probe","__param_script":"` + script.Name + `"}}`))
+			w.Write([]byte(`"labels":{"__scheme__":"` + scheme + `","__metrics_path__":"` + path + `/probe","__param_script":"` + script.Name + `"` + labels + `}}`))
 			if idx+1 < len(e.Config.Scripts) {
 				w.Write([]byte(`,`))
 			}
