@@ -36,7 +36,7 @@ import (
 // be subject to abrupt termination regardless of any 'enforced:'
 // settings. Right now, abrupt termination requires opting in in
 // the configuration file.
-func runScript(name string, logger log.Logger, timeout float64, enforced bool, args []string, env map[string]string) (string, int, error) {
+func runScript(name string, logger log.Logger, logEnv bool, timeout float64, enforced bool, args []string, env map[string]string) (string, int, error) {
 	// We go through a great deal of work to get a deadline with
 	// fractional seconds that we can expose in an environment
 	// variable. However, this is pretty much necessary since
@@ -79,6 +79,11 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SCRIPT_TIMEOUT_ENFORCED=%d", ienforced))
 	}
 
+	logEnvField := ""
+	if logEnv {
+		logEnvField = strings.Join(cmd.Env, " ")
+	}
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -89,7 +94,7 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 			"cmd", strings.Join(args, " "),
 			"stdout", stdout.String(),
 			"stderr", stderr.String(),
-			"env", strings.Join(cmd.Env, " "),
+			"env", logEnvField,
 			"err", err,
 		)
 		if exitError, ok := err.(*exec.ExitError); ok {
@@ -104,7 +109,7 @@ func runScript(name string, logger log.Logger, timeout float64, enforced bool, a
 		"cmd", strings.Join(args, " "),
 		"stdout", stdout.String(),
 		"stderr", stderr.String(),
-		"env", strings.Join(cmd.Env, " "),
+		"env", logEnvField,
 	)
 	return stdout.String(), 0, nil
 }
