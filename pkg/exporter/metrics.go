@@ -82,7 +82,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Success status of the executed script
 	successStatus := 1
 
-	output, exitCode, err := runScript(scriptName, e.Logger, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
+	output, exitCode, err := runScript(scriptName, e.Logger, e.logEnv, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
 		successStatus = 0
 		level.Error(e.Logger).Log("msg", "Run script failed", "err", err, "script", scriptName)

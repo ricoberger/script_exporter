@@ -39,10 +39,11 @@ type Exporter struct {
 	noargs        bool
 	server        *http.Server
 	Logger        log.Logger
+	logEnv        bool
 }
 
 // NewExporter return an exporter object with all its variables
-func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger) (e *Exporter) {
+func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger, logEnv bool) (e *Exporter) {
 	e = &Exporter{
 		Config:        config.Config{},
 		timeoutOffset: timeoutOffset,
@@ -51,6 +52,7 @@ func NewExporter(configFile string, createToken bool, timeoutOffset float64, noa
 			ReadHeaderTimeout: 10 * time.Second,
 		},
 		Logger: logger,
+		logEnv: logEnv,
 	}
 
 	// Load configuration file
@@ -93,6 +95,7 @@ func InitExporter() (e *Exporter) {
 	noargs := flag.Bool("noargs", false, "Restrict script to accept arguments, for security issues")
 	logLevel := flag.String("log.level", "info", "Only log messages with the given severity or above. One of: [debug, info, warn, error]")
 	logFormat := flag.String("log.format", "logfmt", "Output format of log messages. One of: [logfmt, json]")
+	logEnv := flag.Bool("log.env", false, "Log environment variables used by a script.")
 
 	flag.Parse()
 
@@ -120,7 +123,7 @@ func InitExporter() (e *Exporter) {
 		os.Exit(1)
 	}
 
-	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs, logger)
+	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs, logger, *logEnv)
 
 	// Start exporter
 	level.Info(logger).Log("msg", "Starting script_exporter", "version", version.Info())
