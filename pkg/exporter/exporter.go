@@ -43,7 +43,7 @@ type Exporter struct {
 }
 
 // NewExporter return an exporter object with all its variables
-func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger, logEnv bool) (e *Exporter) {
+func NewExporter(configFile string, createToken bool, timeoutOffset float64, noargs bool, logger log.Logger, logEnv bool, configCheck bool) (e *Exporter) {
 	e = &Exporter{
 		Config:        config.Config{},
 		timeoutOffset: timeoutOffset,
@@ -72,6 +72,12 @@ func NewExporter(configFile string, createToken bool, timeoutOffset float64, noa
 		os.Exit(1)
 	}
 
+	// Exit 0 if the configuration file is valid and configCheck is true
+	if configCheck {
+		level.Info(logger).Log("msg", fmt.Sprintf("Configuration file `%s` is valid", configFile))
+		os.Exit(0)
+	}
+
 	// Create bearer token
 	if createToken {
 		token, err := auth.CreateJWT(e.Config)
@@ -96,6 +102,7 @@ func InitExporter() (e *Exporter) {
 	logLevel := flag.String("log.level", "info", "Only log messages with the given severity or above. One of: [debug, info, warn, error]")
 	logFormat := flag.String("log.format", "logfmt", "Output format of log messages. One of: [logfmt, json]")
 	logEnv := flag.Bool("log.env", false, "Log environment variables used by a script.")
+	configCheck := flag.Bool("config.check", false, "Do not run the exporter. Only check the configuration file and exit (0 if the Configuration file is valid, 1 otherwise).")
 
 	flag.Parse()
 
@@ -123,7 +130,7 @@ func InitExporter() (e *Exporter) {
 		os.Exit(1)
 	}
 
-	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs, logger, *logEnv)
+	e = NewExporter(*configFile, *createToken, *timeoutOffset, *noargs, logger, *logEnv, *configCheck)
 
 	// Start exporter
 	level.Info(logger).Log("msg", "Starting script_exporter", "version", version.Info())
