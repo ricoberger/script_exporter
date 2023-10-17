@@ -85,7 +85,6 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	output, exitCode, err := runScript(scriptName, e.Logger, e.logEnv, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
 		successStatus = 0
-		level.Error(e.Logger).Log("msg", "Run script failed", "err", err, "script", scriptName)
 	}
 
 	// Get ignore output parameter and only return success and duration seconds if 'output=ignore'. If the script failed
