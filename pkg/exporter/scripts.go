@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strconv"
@@ -122,10 +123,10 @@ func runScript(name string, logger log.Logger, logEnv bool, timeout float64, enf
 // If the there is an error or no timeout is specified, it returns
 // the maxTimeout configured for the script (the default value for this
 // is 0, which means no timeout)
-func getTimeout(r *http.Request, offset float64, maxTimeout float64) float64 {
-	v := r.URL.Query().Get("timeout")
+func getTimeout(params url.Values, prometheusTimeout string, offset float64, maxTimeout float64) float64 {
+	v := params.Get("timeout")
 	if v == "" {
-		v = r.Header.Get("X-Prometheus-Scrape-Timeout-Seconds")
+		v = prometheusTimeout
 	}
 	if v == "" {
 		return maxTimeout
