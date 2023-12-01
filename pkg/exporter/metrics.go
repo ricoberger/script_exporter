@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -15,17 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	// Get script from url parameter
-	params := r.URL.Query()
-	scriptName := params.Get("script")
-	if scriptName == "" {
-		errorStr := "Script parameter is missing"
-		level.Error(e.Logger).Log("err", errorStr)
-		http.Error(w, errorStr, http.StatusBadRequest)
-		return
-	}
-
+func (e *Exporter) metricsHandler(scriptName string, params url.Values, prometheusTimeout string) (string, error) {
 	// Get prefix from url parameter
 	prefix := params.Get("prefix")
 	if prefix != "" {
@@ -45,7 +36,6 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
 	scriptStartTime := time.Now()
 
 	// When the script configuration contains a cache duration we use the result from the cache when the entry is not
@@ -55,8 +45,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, paramValues, *cacheDuration)
 		if formattedOutput != nil && successStatus != nil && exitCode != nil {
 			level.Debug(e.Logger).Log("msg", "Returning cached result", "script", scriptName)
-			fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, *formattedOutput)
-			return
+			return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, *formattedOutput), nil
 		}
 	}
 
@@ -65,8 +54,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorStr := fmt.Sprintf("Script '%s' not found", scriptName)
 		level.Error(e.Logger).Log("err", errorStr, "script", scriptName)
-		http.Error(w, errorStr, http.StatusBadRequest)
-		return
+		return "", fmt.Errorf(errorStr)
 	}
 	// Append args passed via scrape query parameters
 	runArgs = append(runArgs, paramValues...)
@@ -74,7 +62,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the timeout from either Prometheus's HTTP header or a URL
 	// query parameter, clamped to a maximum specified through the
 	// configuration file.
-	timeout := getTimeout(r, e.timeoutOffset, e.Config.GetMaxTimeout(scriptName))
+	timeout := getTimeout(params, prometheusTimeout, e.timeoutOffset, e.Config.GetMaxTimeout(scriptName))
 
 	// Get env vars
 	runEnv := e.Config.GetRunEnv(scriptName)
@@ -92,8 +80,7 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// true.
 	outputParam := params.Get("output")
 	if outputParam == "ignore" || (successStatus == 0 && e.Config.GetIgnoreOutputOnFail(scriptName)) {
-		fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode)
-		return
+		return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode), nil
 	}
 
 	// Format output
@@ -133,7 +120,34 @@ func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 		setCacheResult(scriptName, paramValues, formattedOutput, successStatus, exitCode)
 	}
 
-	fmt.Fprintf(w, "%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formattedOutput)
+	return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formattedOutput), nil
+}
+
+func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+
+	// Get Prometheus timeout header
+	prometheusTimeout := r.Header.Get("X-Prometheus-Scrape-Timeout-Seconds")
+
+	// Get scripts from url parameter
+	params := r.URL.Query()
+	scriptNames := params["script"]
+	if len(scriptNames) == 0 {
+		errorStr := "Script parameter is missing"
+		level.Error(e.Logger).Log("err", errorStr)
+		http.Error(w, errorStr, http.StatusBadRequest)
+		return
+	}
+
+	// Run each script and return the output
+	for _, scriptName := range scriptNames {
+		output, err := e.metricsHandler(scriptName, params, prometheusTimeout)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		fmt.Fprint(w, output)
+	}
 }
 
 // SetupMetrics creates and registers our internal Prometheus metrics,
