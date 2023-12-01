@@ -1,11 +1,11 @@
-FROM golang:1.21.3-alpine3.18 as build
+FROM golang:1.21.4-alpine3.18 as build
 RUN apk update && apk add git make
 RUN mkdir /build
 WORKDIR /build
 COPY . .
 RUN export CGO_ENABLED=0 && make build
 
-FROM alpine:3.18.4
+FROM alpine:3.18.5
 RUN apk add --no-cache --update bash curl jq ca-certificates tini
 COPY --from=build /build/bin/script_exporter /bin/script_exporter
 EXPOSE 9469
