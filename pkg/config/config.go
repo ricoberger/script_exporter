@@ -75,12 +75,21 @@ func (c *Config) LoadConfig(file string) error {
 		return err
 	}
 
+	data = []byte(expandEnv(string(data)))
+
 	err = yaml.Unmarshal(data, &c)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// expandEnv replaces all environment variables in the provided string. The environment variables can be in the form
+// `${var}` or `$var`. If the string should contain a `$` it can be escaped via `$$`.
+func expandEnv(s string) string {
+	os.Setenv("CRANE_DOLLAR", "$")
+	return os.ExpandEnv(strings.Replace(s, "$$", "${CRANE_DOLLAR}", -1))
 }
 
 // ValidateConfig validates no contradictory config options are set.
