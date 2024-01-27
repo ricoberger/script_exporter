@@ -6,24 +6,25 @@ metadata:
   labels:
     {{- include "script-exporter.labels" . | nindent 4 }}
     {{- include "script-exporter.serviceMonitorLabels" . | nindent 4 }}
+    namespace: {{ default .Release.Namespace .Values.serviceMonitor.namespace }}
 spec:
   endpoints:
     - port: http
-      {{- if .Values.serviceMonitor.interval }}
-      interval: {{ .Values.serviceMonitor.interval }}
+      {{- with .Values.serviceMonitor.interval }}
+      interval: {{ . }}
       {{- end }}
-      {{- if .Values.serviceMonitor.scrapeTimeout }}
-      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- with .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
       {{- end }}
       path: /metrics
       honorLabels: {{ .Values.serviceMonitor.honorLabels }}
-      {{- if .Values.serviceMonitor.metricRelabelings }}
+      {{- with .Values.serviceMonitor.metricRelabelings }}
       metricRelabelings:
-      {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 6 }}
+      {{ toYaml . | nindent 6 }}
       {{- end }}
-      {{- if .Values.serviceMonitor.relabelings }}
+      {{- with .Values.serviceMonitor.relabelings }}
       relabelings:
-      {{ toYaml .Values.serviceMonitor.relabelings | nindent 6 }}
+      {{ toYaml . | nindent 6 }}
       {{- end }}
   namespaceSelector:
     matchNames:
@@ -31,4 +32,32 @@ spec:
   selector:
     matchLabels:
       {{- include "script-exporter.selectorLabels" . | nindent 6 }}
+{{- range (fromYaml .Values.config).scripts }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "script-exporter.labels" $ | nindent 4 }}
+    {{- include "script-exporter.serviceMonitorLabels" $ | nindent 4 }}
+  name: {{ include "script-exporter.fullname" $ }}-{{ kebabcase .name }}
+  namespace: {{ default $.Release.Namespace $.Values.serviceMonitor.namespace }}
+spec:
+  endpoints:
+    - path: /probe
+      port: http
+      params:
+        script:
+          - {{ .name }}
+      relabelings:
+        - action: replace
+          replacement: {{ .name }}
+          targetLabel: script
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "script-exporter.selectorLabels" $ | nindent 6 }}
+{{- end }}
 {{- end -}}

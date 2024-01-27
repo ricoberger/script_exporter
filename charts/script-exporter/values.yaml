@@ -127,13 +127,17 @@ serviceAccount:
 serviceMonitor:
   enabled: false
 
+  ## Namespace for the ServiceMonitor. Fallback to the the release namespace.
+  ##
+  namespace: ""
+
   ## Interval at which metrics should be scraped. Fallback to the Prometheus default unless specified.
   ##
-  # interval: 10s
+  interval: ""
 
   ## Timeout after which the scrape is ended. Fallback to the Prometheus default unless specified.
   ##
-  # scrapeTimeout: 30s
+  scrapeTimeout: ""
 
   ## Additional labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
   ## See: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
