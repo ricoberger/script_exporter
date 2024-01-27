@@ -3,4 +3,4 @@ name: script-exporter
 description: Prometheus exporter to execute scripts and collect metrics from the output or the exit status.
 type: application
 version: 0.8.0
-appVersion: v2.16.0
+appVersion: v2.17.0
