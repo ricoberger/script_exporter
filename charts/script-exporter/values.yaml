@@ -125,6 +125,21 @@ serviceAccount:
 ## See: https://github.com/coreos/prometheus-operator
 ##
 serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator for script-exporter itself
+  ##
+  selfMonitor:
+    enabled: true
+    additionalMetricsRelabels: {}
+    additionalRelabeling: []
+    labels: {}
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 30s
+
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator for each target
+  ##
   enabled: false
 
   ## Namespace for the ServiceMonitor. Fallback to the the release namespace.
@@ -165,6 +180,21 @@ serviceMonitor:
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
+
+  ## Automatically create a serviceMonitor for each script defined in the 'config' section below
+  ## This option is mutaly exclusive with the following 'targets' list
+  ##
+  autoCreate:
+    enabled: true
+
+  targets: []
+    # - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
+    #   script: ping                     # Name of the script to target.
+    #   labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
+    #   interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+    #   scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+    #   additionalMetricsRelabels: []    # List of metric relabeling actions to run
+    #   additionalRelabeling: []         # List of relabeling actions to run
 
 ## The configuration for the script_exporter as shown in
 ## https://github.com/ricoberger/script_exporter/tree/main#usage-and-configuration
