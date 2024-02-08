@@ -1,34 +1,96 @@
 {{- if .Values.serviceMonitor.enabled }}
+{{- if .Values.serviceMonitor.autoCreate.enabled }}
+{{- range (fromYaml .Values.config).scripts }}
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "script-exporter.fullname" . }}
   labels:
-    {{- include "script-exporter.labels" . | nindent 4 }}
-    {{- include "script-exporter.serviceMonitorLabels" . | nindent 4 }}
+    {{- include "script-exporter.labels" $ | nindent 4 }}
+    {{- include "script-exporter.serviceMonitorLabels" $ | nindent 4 }}
+  name: {{ include "script-exporter.fullname" $ }}-{{ kebabcase .name }}
+  namespace: {{ default $.Release.Namespace $.Values.serviceMonitor.namespace }}
 spec:
   endpoints:
-    - port: http
-      {{- if .Values.serviceMonitor.interval }}
-      interval: {{ .Values.serviceMonitor.interval }}
+    - path: /probe
+      port: http
+      {{- with $.Values.serviceMonitor.interval }}
+      interval: {{ . }}
       {{- end }}
-      {{- if .Values.serviceMonitor.scrapeTimeout }}
-      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- with $.Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
       {{- end }}
-      path: /metrics
-      honorLabels: {{ .Values.serviceMonitor.honorLabels }}
-      {{- if .Values.serviceMonitor.metricRelabelings }}
+      params:
+        script:
+          - {{ .name }}
       metricRelabelings:
-      {{ toYaml .Values.serviceMonitor.metricRelabelings | nindent 6 }}
+        - action: replace
+          replacement: {{ .name }}
+          targetLabel: script
+      {{- with $.Values.serviceMonitor.metricRelabelings }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.serviceMonitor.relabelings }}
       relabelings:
-      {{ toYaml .Values.serviceMonitor.relabelings | nindent 6 }}
+        - action: replace
+          replacement: {{ .name }}
+          targetLabel: script
+      {{- with $.Values.serviceMonitor.relabelings }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
   namespaceSelector:
     matchNames:
-      - {{ .Release.Namespace }}
+      - {{ $.Release.Namespace }}
   selector:
     matchLabels:
-      {{- include "script-exporter.selectorLabels" . | nindent 6 }}
-{{- end -}}
+      {{- include "script-exporter.selectorLabels" $ | nindent 6 }}
+{{- end }}
+{{- else }}
+{{- range .Values.serviceMonitor.targets }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "script-exporter.labels" $ | nindent 4 }}
+    {{- include "script-exporter.serviceMonitorLabels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "script-exporter.fullname" $ }}-{{ kebabcase .name }}
+  namespace: {{ default $.Release.Namespace $.Values.serviceMonitor.namespace }}
+spec:
+  endpoints:
+    - path: /probe
+      port: http
+      {{- with .interval | default $.Values.serviceMonitor.interval }}
+      interval: {{ . }}
+      {{- end }}
+      {{- with .scrapeTimeout | default $.Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ . }}
+      {{- end }}
+      params:
+        script:
+          - {{ .script }}
+      metricRelabelings:
+        - action: replace
+          replacement: {{ .script }}
+          targetLabel: script
+      {{- with .additionalMetricsRelabels | default $.Values.serviceMonitor.metricRelabelings }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      relabelings:
+        - action: replace
+          replacement: {{ .script }}
+          targetLabel: script
+      {{- with .additionalRelabeling | default $.Values.serviceMonitor.relabelings }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ $.Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "script-exporter.selectorLabels" $ | nindent 6 }}
+{{- end }}
+{{- end }}
+{{- end }}
