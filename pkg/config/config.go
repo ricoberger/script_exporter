@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -47,6 +48,8 @@ type Config struct {
 
 	Scripts []ScriptConfig `yaml:"scripts"`
 
+	ScriptsConfigs []string `yaml:"scripts_configs"`
+
 	Discovery struct {
 		Host   string `yaml:"host"`
 		Port   string `yaml:"port"`
@@ -80,6 +83,32 @@ func (c *Config) LoadConfig(file string) error {
 	err = yaml.Unmarshal(data, &c)
 	if err != nil {
 		return err
+	}
+
+	// Additional scripts can also be defined via the `scripts_configs` field. This field can contain a list of glob
+	// patterns that will be expanded to a list of files. Each file contains a list of additional script configurations.
+	for _, scriptsConfig := range c.ScriptsConfigs {
+		files, err := filepath.Glob(scriptsConfig)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range files {
+			data, err := os.ReadFile(file)
+			if err != nil {
+				return err
+			}
+
+			data = []byte(expandEnv(string(data)))
+
+			var additionalScriptConfigs []ScriptConfig
+			err = yaml.Unmarshal(data, &additionalScriptConfigs)
+			if err != nil {
+				return err
+			}
+
+			c.Scripts = append(c.Scripts, additionalScriptConfigs...)
+		}
 	}
 
 	return nil

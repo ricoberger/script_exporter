@@ -19,8 +19,6 @@ discovery:
   # path: /prefix-path
 
 scripts:
-  - name: test
-    command: ./examples/test.sh
   - name: ping
     command: ./examples/ping.sh
     cacheDuration: 1m
@@ -45,3 +43,6 @@ scripts:
     args:
       - test1
       - test2
+
+scripts_configs:
+  - ./examples/scripts_*.yaml

@@ -104,6 +104,9 @@ scripts:
       prefix: <string>
       scrape_interval: <duration>
       scrape_timeout: <duration>
+
+scripts_configs:
+  - <string>
 ```
 
 The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
@@ -146,7 +149,7 @@ For testing purposes, the timeout can be specified directly as a URL parameter (
 
 The `cacheDuration` config can be used to cache the results from an execution of the script for the provided time. The provided duration must be parsable by the [`time.ParseDuration`](https://pkg.go.dev/time#ParseDuration) function. If no cache duration is provided or the provided cache duration can not be parsed, the output of an script will not be cached.
 
-You can fine tune the script discovery options via optional script `discovery`. All these options will go through prometheus configuration where you can change them via relabel mechanism. 
+You can fine tune the script discovery options via optional script `discovery`. All these options will go through prometheus configuration where you can change them via relabel mechanism.
 There are `params` to define dynamic script parameters (with reserved keys: `params`, `prefix`, `script` and `timeout`) where only value will be used during script invoking (similar to `args`), `prefix` to define prefix for all script metrics, `scrape_interval` to define how often the script scrape should run and `scrape_timeout` to define the scrape timeout for prometheus (similar to `timeout`).
 
 The global `discovery` configures the main discovery parameters. If not defined, the exporter will use `Host:` header from the request to decide how to present a `target` to prometheus.

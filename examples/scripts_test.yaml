@@ -1,0 +1,2 @@
+- name: test
+  command: ./examples/test.sh
