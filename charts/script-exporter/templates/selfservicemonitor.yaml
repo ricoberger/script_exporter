@@ -3,11 +3,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "script-exporter.fullname" . }}
   labels:
     {{- include "script-exporter.labels" . | nindent 4 }}
     {{- include "script-exporter.serviceMonitorLabels" . | nindent 4 }}
-    namespace: {{ default .Release.Namespace .Values.serviceMonitor.namespace }}
+  name: {{ include "script-exporter.fullname" . }}
+  namespace: {{ default .Release.Namespace .Values.serviceMonitor.namespace }}
 spec:
   endpoints:
     - port: http
