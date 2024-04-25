@@ -155,6 +155,9 @@ func InitExporter() (e *Exporter) {
 			port = "9469"
 		}
 		scheme := "http"
+		if r.TLS != nil {
+			scheme = "https"
+		}
 		path := ""
 		if len(e.Config.Discovery.Host) > 0 {
 			host = e.Config.Discovery.Host
