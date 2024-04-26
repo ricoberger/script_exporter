@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -155,6 +156,9 @@ func InitExporter() (e *Exporter) {
 			port = "9469"
 		}
 		scheme := "http"
+		if r.TLS != nil {
+			scheme = "https"
+		}
 		path := ""
 		if len(e.Config.Discovery.Host) > 0 {
 			host = e.Config.Discovery.Host
@@ -176,13 +180,24 @@ func InitExporter() (e *Exporter) {
 			si := script.GetDiscoveryScrapeInterval()
 			st := script.GetDiscoveryScrapeTimeout()
 			labels := ""
+			// params needs to be taken always same way => sort
 			params := make([]string, 0)
+			values := make(map[string]string, 0)
 			for key, value := range script.Discovery.Params {
 				json_value, err := json.Marshal(value)
-				if err == nil {
-					params = append(params, key)
-					labels += `,"__param_` + key + `":` + string(json_value)
+				if err != nil {
+					continue
 				}
+				if strings.HasPrefix(key, "__") {
+					labels += `,"__param_` + key + `": ` + string(json_value)
+					continue
+				}
+				params = append(params, key)
+				values[key] = string(json_value)
+			}
+			sort.Strings(params)
+			for _, key := range params {
+				labels += `,"__param_` + key + `":` + values[key]
 			}
 			if len(params) > 0 {
 				labels += `,"__param_params":"` + strings.Join(params[:], ",") + `"`
