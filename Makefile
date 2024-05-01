@@ -7,7 +7,7 @@ VERSION     ?= $(shell git describe --tags)
 REVISION    ?= $(shell git rev-parse HEAD)
 BRANCH      ?= $(shell git rev-parse --abbrev-ref HEAD)
 BUILDUSER   ?= $(shell id -un)
-BUILDTIME   ?= $(shell date '+%Y%m%d-%H:%M:%S')
+BUILDTIME   ?= $(shell date '+%Y-%m-%d@%H:%M:%S')
 
 .PHONY: build build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64 clean release release-major release-minor release-patch
 

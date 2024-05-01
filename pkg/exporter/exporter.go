@@ -104,6 +104,7 @@ func InitExporter() (e *Exporter) {
 	logFormat := flag.String("log.format", "logfmt", "Output format of log messages. One of: [logfmt, json]")
 	logEnv := flag.Bool("log.env", false, "Log environment variables used by a script.")
 	configCheck := flag.Bool("config.check", false, "Do not run the exporter. Only check the configuration file and exit (0 if the Configuration file is valid, 1 otherwise).")
+	printVersion := flag.Bool("version", false, "Print version information.")
 
 	flag.Parse()
 
@@ -122,6 +123,17 @@ func InitExporter() (e *Exporter) {
 		var logger log.Logger
 		level.Error(logger).Log("msg", "Failed to init custom logger", "err", err)
 		os.Exit(1)
+	}
+
+	if *printVersion {
+		v, err := version.Print("script_exporter")
+		if err != nil {
+			level.Error(logger).Log("Failed to print version information", "err", err)
+			os.Exit(1)
+		}
+
+		fmt.Fprintln(os.Stdout, v)
+		os.Exit(0)
 	}
 
 	// Avoid problems by erroring out if we have any remaining
