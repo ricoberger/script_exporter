@@ -1,4 +1,4 @@
-FROM golang:1.22.1-alpine3.18 as build
+FROM golang:1.22.2-alpine3.18 as build
 RUN apk update && apk add git make
 RUN mkdir /build
 WORKDIR /build
