@@ -48,14 +48,24 @@ The script_exporter is configured via a configuration file and command-line flag
 
 ```txt
 Usage of ./bin/script_exporter:
+  -config.check
+        Do not run the exporter. Only check the configuration file and exit (0 if the Configuration file is valid, 1 otherwise).
   -config.file file
         Configuration file in YAML format. (default "config.yaml")
   -create-token
         Create bearer token for authentication.
+  -log.env
+        Log environment variables used by a script.
+  -log.format string
+        Output format of log messages. One of: [logfmt, json] (default "logfmt")
+  -log.level string
+        Only log messages with the given severity or above. One of: [debug, info, warn, error] (default "info")
+  -noargs
+        Restrict script to accept arguments, for security issues
   -timeout-offset seconds
         Offset to subtract from Prometheus-supplied timeout in seconds. (default 0.5)
   -version
-        Show version information.
+        Print version information.
   -web.listen-address string
         Address to listen on for web interface and telemetry. (default ":9469")
 ```
