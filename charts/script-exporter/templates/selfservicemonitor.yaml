@@ -1,3 +1,4 @@
+{{- if .Values.serviceMonitor.enabled }}
 {{- if .Values.serviceMonitor.selfMonitor.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -33,4 +34,5 @@ spec:
   selector:
     matchLabels:
       {{- include "script-exporter.selectorLabels" . | nindent 6 }}
+{{- end }}
 {{- end }}
