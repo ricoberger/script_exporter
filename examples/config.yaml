@@ -21,7 +21,9 @@ discovery:
 scripts:
   - name: ping
     command: ./examples/ping.sh
-    cacheDuration: 1m
+    allowEnvOverwrite: true
+    env:
+      target_ips: "127.0.0.1"
   - name: helloworld
     command: ./examples/helloworld.sh
     args:

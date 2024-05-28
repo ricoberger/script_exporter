@@ -97,6 +97,9 @@ scripts:
     command: <string>
     args:
       - <string>
+    # by default the env cannot be overwritten by query parameters.
+    # If you want to change this, set this option to true
+    allowEnvOverwrite: <bool>
     # optional
     env:
       <key>: <value>
