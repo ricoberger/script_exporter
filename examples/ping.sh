@@ -1,4 +1,7 @@
 #!/bin/bash
+# exit script on error
+set -e
 
-ping -c 3 $1 > /dev/null 2>&1
-exit $?
+while read -r ip; do
+  ping -c 3 $ip &> /dev/null
+done < <(echo "$target_ips" | tr ',' '\n')

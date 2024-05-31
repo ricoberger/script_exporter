@@ -65,6 +65,7 @@ type ScriptConfig struct {
 	Command            string            `yaml:"command"`
 	Args               []string          `yaml:"args"`
 	Env                map[string]string `yaml:"env"`
+	AllowEnvOverwrite  bool              `yaml:"allowEnvOverwrite"`
 	IgnoreOutputOnFail bool              `yaml:"ignoreOutputOnFail"`
 	Timeout            timeout           `yaml:"timeout"`
 	CacheDuration      string            `yaml:"cacheDuration"`
@@ -175,7 +176,17 @@ func (c *Config) GetRunEnv(scriptName string) map[string]string {
 			break
 		}
 	}
-	return nil
+	return map[string]string{}
+}
+
+// GetAllowEnvOverwrite returns the allowEnvOverwrite parameter for the provided script.
+func (c *Config) GetAllowEnvOverwrite(scriptName string) bool {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			return script.AllowEnvOverwrite
+		}
+	}
+	return false
 }
 
 // GetIgnoreOutputOnFail returns the ignoreOutputOnFail parameter for the provided script.

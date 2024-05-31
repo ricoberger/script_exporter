@@ -67,6 +67,14 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 	// Get env vars
 	runEnv := e.Config.GetRunEnv(scriptName)
 
+	envOverwriteAllowed := e.Config.GetAllowEnvOverwrite(scriptName)
+
+	for key, paramValues := range params {
+		if _, ok := runEnv[key]; !ok || envOverwriteAllowed {
+			runEnv[key] = strings.Join(paramValues, ",")
+		}
+	}
+
 	// Success status of the executed script
 	successStatus := 1
 
