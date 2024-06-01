@@ -1,6 +1,6 @@
 module github.com/ricoberger/script_exporter
 
-go 1.21
+go 1.22
 
 require (
 	github.com/go-kit/log v0.2.1
