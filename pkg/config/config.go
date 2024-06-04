@@ -166,14 +166,19 @@ func (c *Config) GetRunArgs(scriptName string) ([]string, error) {
 	return nil, errors.New("script doesn't exist in the config")
 }
 
+func copyMap(srcMap map[string]string) map[string]string {
+	mapCopy := make(map[string]string)
+	for k, v := range srcMap {
+		mapCopy[k] = v
+	}
+	return mapCopy
+}
+
 // GetRunEnv returns the env variables for a given script name.
 func (c *Config) GetRunEnv(scriptName string) map[string]string {
 	for _, script := range c.Scripts {
 		if script.Name == scriptName {
-			if len(script.Env) > 0 {
-				return script.Env
-			}
-			break
+			return copyMap(script.Env)
 		}
 	}
 	return map[string]string{}
