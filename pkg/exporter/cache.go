@@ -15,9 +15,9 @@ type cacheEntry struct {
 	successStatus   int
 }
 
-func getCacheResult(scriptName string, paramValues []string, cacheDuration time.Duration) (*string, *int, *int) {
+func getCacheResult(scriptName string, paramValues []string, cacheDuration time.Duration, expCacheOnTimeout bool) (*string, *int, *int) {
 	if entry, ok := cache[fmt.Sprintf("%s--%s", scriptName, strings.Join(paramValues, "-"))]; ok {
-		if entry.cacheTime.Add(cacheDuration).After(time.Now()) {
+		if entry.cacheTime.Add(cacheDuration).After(time.Now()) || expCacheOnTimeout {
 			return &entry.formattedOutput, &entry.successStatus, &entry.exitCode
 		}
 	}

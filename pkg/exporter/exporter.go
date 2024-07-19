@@ -32,6 +32,10 @@ const (
 	scriptDurationSecondsType = "# TYPE script_duration_seconds gauge"
 	scriptExitCodeHelp        = "# HELP script_exit_code The exit code of the script."
 	scriptExitCodeType        = "# TYPE script_exit_code gauge"
+	scriptCacheHelp           = "# HELP script_use_cache Script use cache (0 = no, 1 = yes)."
+	scriptCacheType           = "# TYPE script_use_cache gauge"
+	scriptExpCacheHelp        = "# HELP script_use_expired_cache Script re-use expired cache (0 = no, 1 = yes)."
+	scriptExpCacheType        = "# TYPE script_use_expired_cache gauge"
 )
 
 type Exporter struct {

@@ -42,10 +42,10 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 	// stale.
 	cacheDuration := e.Config.GetCacheDuration(scriptName)
 	if cacheDuration != nil {
-		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, paramValues, *cacheDuration)
+		formattedOutput, successStatus, exitCode := getCacheResult(scriptName, paramValues, *cacheDuration, false)
 		if formattedOutput != nil && successStatus != nil && exitCode != nil {
 			level.Debug(e.Logger).Log("msg", "Returning cached result", "script", scriptName)
-			return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, *formattedOutput), nil
+			return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n%s\n%s_use_cache{script=\"%s\"} %d\n%s\n%s\n%s_use_expired_cache{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, scriptCacheHelp, scriptCacheType, namespace, scriptName, 1, scriptExpCacheHelp, scriptExpCacheType, namespace, scriptName, 0, *formattedOutput), nil
 		}
 	}
 
@@ -81,6 +81,15 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 	output, exitCode, err := runScript(scriptName, e.Logger, e.logEnv, timeout, e.Config.GetTimeoutEnforced(scriptName), runArgs, runEnv)
 	if err != nil {
 		successStatus = 0
+
+		useExpiredCacheOnError := e.Config.GetUseExpiredCacheOnError(scriptName)
+		if cacheDuration != nil && useExpiredCacheOnError {
+			formattedOutput, successStatus, exitCode := getCacheResult(scriptName, paramValues, *cacheDuration, useExpiredCacheOnError)
+			if formattedOutput != nil && successStatus != nil && exitCode != nil {
+				level.Debug(e.Logger).Log("msg", "Returning expired cache result", "script", scriptName)
+				return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n%s\n%s_use_cache{script=\"%s\"} %d\n%s\n%s\n%s_use_expired_cache{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, *successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, *exitCode, scriptCacheHelp, scriptCacheType, namespace, scriptName, 1, scriptExpCacheHelp, scriptExpCacheType, namespace, scriptName, 1, *formattedOutput), nil
+			}
+		}
 	}
 
 	// Get ignore output parameter and only return success and duration seconds if 'output=ignore'. If the script failed
@@ -88,7 +97,7 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 	// true.
 	outputParam := params.Get("output")
 	if outputParam == "ignore" || (successStatus == 0 && e.Config.GetIgnoreOutputOnFail(scriptName)) {
-		return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode), nil
+		return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n%s\n%s_use_cache{script=\"%s\"} %d\n%s\n%s\n%s_use_expired_cache{script=\"%s\"} %d\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, scriptCacheHelp, scriptCacheType, namespace, scriptName, 0, scriptExpCacheHelp, scriptExpCacheType, namespace, scriptName, 0), nil
 	}
 
 	// Format output
@@ -128,7 +137,7 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 		setCacheResult(scriptName, paramValues, formattedOutput, successStatus, exitCode)
 	}
 
-	return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, formattedOutput), nil
+	return fmt.Sprintf("%s\n%s\n%s_success{script=\"%s\"} %d\n%s\n%s\n%s_duration_seconds{script=\"%s\"} %f\n%s\n%s\n%s_exit_code{script=\"%s\"} %d\n%s\n%s\n%s_use_cache{script=\"%s\"} %d\n%s\n%s\n%s_use_expired_cache{script=\"%s\"} %d\n%s\n", scriptSuccessHelp, scriptSuccessType, namespace, scriptName, successStatus, scriptDurationSecondsHelp, scriptDurationSecondsType, namespace, scriptName, time.Since(scriptStartTime).Seconds(), scriptExitCodeHelp, scriptExitCodeType, namespace, scriptName, exitCode, scriptCacheHelp, scriptCacheType, namespace, scriptName, 0, scriptExpCacheHelp, scriptExpCacheType, namespace, scriptName, 0, formattedOutput), nil
 }
 
 func (e *Exporter) MetricsHandler(w http.ResponseWriter, r *http.Request) {

@@ -60,16 +60,17 @@ type Config struct {
 
 // ScriptConfig is the configuration for a single script.
 type ScriptConfig struct {
-	Name               string            `yaml:"name"`
-	Script             string            `yaml:"script"`
-	Command            string            `yaml:"command"`
-	Args               []string          `yaml:"args"`
-	Env                map[string]string `yaml:"env"`
-	AllowEnvOverwrite  bool              `yaml:"allowEnvOverwrite"`
-	IgnoreOutputOnFail bool              `yaml:"ignoreOutputOnFail"`
-	Timeout            timeout           `yaml:"timeout"`
-	CacheDuration      string            `yaml:"cacheDuration"`
-	Discovery          scriptDiscovery   `yaml:"discovery"`
+	Name                   string            `yaml:"name"`
+	Script                 string            `yaml:"script"`
+	Command                string            `yaml:"command"`
+	Args                   []string          `yaml:"args"`
+	Env                    map[string]string `yaml:"env"`
+	AllowEnvOverwrite      bool              `yaml:"allowEnvOverwrite"`
+	IgnoreOutputOnFail     bool              `yaml:"ignoreOutputOnFail"`
+	Timeout                timeout           `yaml:"timeout"`
+	UseExpiredCacheOnError bool              `yaml:"useExpiredCacheOnError"`
+	CacheDuration          string            `yaml:"cacheDuration"`
+	Discovery              scriptDiscovery   `yaml:"discovery"`
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -249,6 +250,16 @@ func (c *Config) GetCacheDuration(scriptName string) *time.Duration {
 		}
 	}
 	return nil
+}
+
+// GetUseExpiredCacheOnError returns the UseExpiredCacheOnError parameter for the provided script.
+func (c *Config) GetUseExpiredCacheOnError(scriptName string) bool {
+	for _, script := range c.Scripts {
+		if script.Name == scriptName {
+			return script.UseExpiredCacheOnError
+		}
+	}
+	return false
 }
 
 // GetDiscoveryScrapeInterval returns the scrape_interval if it is valid duration, otherwise empty string.
