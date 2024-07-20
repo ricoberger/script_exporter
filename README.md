@@ -111,6 +111,7 @@ scripts:
       max_timeout: <float>
       enforced: <boolean>
     cacheDuration: <duration>
+    useExpiredCacheOnError: <boolean>
     discovery:
       params:
         <string>: <string>
@@ -160,7 +161,9 @@ Prometheus will normally provide an indication of its scrape timeout to the scri
 
 For testing purposes, the timeout can be specified directly as a URL parameter (`timeout`). If present, the URL parameter takes priority over the Prometheus HTTP header.
 
-The `cacheDuration` config can be used to cache the results from an execution of the script for the provided time. The provided duration must be parsable by the [`time.ParseDuration`](https://pkg.go.dev/time#ParseDuration) function. If no cache duration is provided or the provided cache duration can not be parsed, the output of an script will not be cached.
+The `cacheDuration` config can be used to cache the results from an execution of the script for the provided time. The provided duration must be parsable by the [`time.ParseDuration`](https://pkg.go.dev/time#ParseDuration) function. If no cache duration is provided or the provided cache duration can not be parsed, the output of an script will not be cached. It produces the metric `script_use_cache` to track in time when results returned are coming from cache.
+
+The `useExpiredCacheOnError` config allow to return expired cache in case of errors. It produces the metric `script_use_expired_cache` for track in time if you are using expired cache, it mean there is something wrong with the script execution.
 
 You can fine tune the script discovery options via optional script `discovery`. All these options will go through prometheus configuration where you can change them via relabel mechanism.
 There are `params` to define dynamic script parameters (with reserved keys: `params`, `prefix`, `script` and `timeout`) where only value will be used during script invoking (similar to `args`), `prefix` to define prefix for all script metrics, `scrape_interval` to define how often the script scrape should run and `scrape_timeout` to define the scrape timeout for prometheus (similar to `timeout`).
