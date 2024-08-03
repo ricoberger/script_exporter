@@ -21,8 +21,8 @@ An example configuration can be found in the [examples](./examples) folder. To u
 To run the examples via Docker the following commands can be used:
 
 ```sh
-docker build -f ./Dockerfile -t ricoberger/script_exporter:dev .
-docker run --rm -it --name script_exporter -p 9469:9469 -v $(pwd)/examples:/examples ricoberger/script_exporter:dev -config.file /examples/config.yaml
+docker build -f ./Dockerfile -t ghcr.io/ricoberger/script_exporter:dev .
+docker run --rm -it --name script_exporter -p 9469:9469 -v $(pwd)/examples:/examples ghcr.io/ricoberger/script_exporter:dev -config.file /examples/config.yaml
 ```
 
 Then visit [http://localhost:9469](http://localhost:9469) in the browser of your choice. There you have access to the following examples:
