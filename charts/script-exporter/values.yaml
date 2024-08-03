@@ -19,7 +19,7 @@ imagePullSecrets: []
 ## Set the image which should be used for script_exporter.
 ##
 image:
-  repository: ricoberger/script_exporter
+  repository: ghcr.io/ricoberger/script_exporter
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
