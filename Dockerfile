@@ -1,5 +1,4 @@
 FROM golang:1.22.5 as build
-RUN apk update && apk add git make
 RUN mkdir /build
 WORKDIR /build
 COPY . .
