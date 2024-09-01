@@ -1,4 +1,4 @@
-FROM golang:1.22.5 as build
+FROM golang:1.23.0 as build
 RUN mkdir /build
 WORKDIR /build
 COPY . .
