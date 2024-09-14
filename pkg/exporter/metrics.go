@@ -54,7 +54,7 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 	if err != nil {
 		errorStr := fmt.Sprintf("Script '%s' not found", scriptName)
 		level.Error(e.Logger).Log("err", errorStr, "script", scriptName)
-		return "", fmt.Errorf(errorStr)
+		return "", fmt.Errorf("%s", errorStr)
 	}
 	// Append args passed via scrape query parameters
 	runArgs = append(runArgs, paramValues...)
