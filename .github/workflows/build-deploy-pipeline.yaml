@@ -1,0 +1,59 @@
+name: Build, Deploy pipeline
+
+permissions:
+  checks: write
+  contents: read
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Release
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: make release
+
+      - name: Upload
+        run: |
+          ./upload.sh ./bin/script_exporter-darwin-amd64 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-amd64 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-armv7 application/x-binary
+          ./upload.sh ./bin/script_exporter-linux-arm64 application/x-binary
+          ./upload.sh ./bin/script_exporter-windows-amd64.exe application/x-binary
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+
+      - name: Build image
+        uses: Brandwatch/bw-workflow-actions/steps/generic/dockerfile-image@production
+        with:
+          images: ${{ github.event.repository.name }}
+          tag: ${{ github.ref_name }}-${{ github.run_id }}
+          brandwatch-artifactory-docker-push-password: ${{ secrets.ARTIFACTORY_DOCKER_PUSH_PASSWORD }}
+          cpu-architectures: amd64
+
+      - name: Scan And Push Image
+        uses: Brandwatch/bw-workflow-actions/steps/generic/scan-and-push-image@production
+        with:
+          artifactory-pwd: ${{ secrets.ARTIFACTORY_DOCKER_PUSH_PASSWORD }}
+          images: ${{ github.event.repository.name }}
+          tag: ${{ github.ref_name }}-${{ github.run_id }}
+          trivy-kill-key: ${{ secrets.TRIVY_KILL_KEY }}
