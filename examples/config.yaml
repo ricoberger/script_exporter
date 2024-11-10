@@ -1,3 +1,4 @@
+---
 tls:
   enabled: false
   crt: server.crt
@@ -13,10 +14,10 @@ bearerAuth:
   signingKey: my_secret_key
 
 discovery:
-  # host: localhost
-  # port: 1231
-  # scheme: https
-  # path: /prefix-path
+# host: localhost
+# port: 1231
+# scheme: https
+# path: /prefix-path
 
 scripts:
   - name: ping
@@ -24,6 +25,7 @@ scripts:
     allowEnvOverwrite: true
     env:
       target_ips: "127.0.0.1"
+    cacheDuration: 1m
   - name: helloworld
     command: ./examples/helloworld.sh
     args:
