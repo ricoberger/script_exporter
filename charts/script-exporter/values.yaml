@@ -196,6 +196,9 @@ serviceMonitor:
     #   additionalMetricsRelabels: []    # List of metric relabeling actions to run
     #   additionalRelabeling: []         # List of relabeling actions to run
 
+## The configuration file path for the script_exporter. It defaults to "/etc/script-exporter/config.yaml".
+configFile: ""
+
 ## The configuration for the script_exporter as shown in
 ## https://github.com/ricoberger/script_exporter/tree/main#usage-and-configuration
 ##
