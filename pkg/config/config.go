@@ -71,6 +71,7 @@ type ScriptConfig struct {
 	UseExpiredCacheOnError bool              `yaml:"useExpiredCacheOnError"`
 	CacheDuration          string            `yaml:"cacheDuration"`
 	Discovery              scriptDiscovery   `yaml:"discovery"`
+	Sudo                   bool              `yaml:"sudo"`
 }
 
 // LoadConfig reads the configuration file and umarshal the data into the config struct
@@ -159,6 +160,9 @@ func (c *Config) GetRunArgs(scriptName string) ([]string, error) {
 				return strings.Split(script.Script, " "), nil
 			}
 			var runArgs []string
+			if script.Sudo {
+				runArgs = append(runArgs, "sudo")
+			}
 			runArgs = append(runArgs, script.Command)
 			runArgs = append(runArgs, script.Args...)
 			return runArgs, nil
