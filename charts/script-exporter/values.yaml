@@ -119,7 +119,15 @@ service:
   labels: {}
 
 serviceAccount:
+  ## If true, a ServiceAccount is created.
+  ##
+  create: false
+  ## The name of the ServiceAccount to use. This field is required if `create` is true.
+  ##
   name: ""
+  ## Specify annotations to add to the ServiceAccount.
+  ##
+  annotations: {}
 
 ## Create a Service Monitor for the Prometheus Operator.
 ## See: https://github.com/coreos/prometheus-operator
