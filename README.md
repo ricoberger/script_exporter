@@ -95,6 +95,7 @@ discovery:
 scripts:
   - name: <string>
     command: <string>
+    sudo: <boolean>
     args:
       - <string>
     # by default the env cannot be overwritten by query parameters.
@@ -123,7 +124,9 @@ scripts_configs:
   - <string>
 ```
 
-The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
+The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``. 
+
+If `sudo` is defined and set to `true`, the command will be executed with privileged (root) permissions by executing the `command` with a pre-fixed `sudo`. Note that you still need to create the relevant sudoers entries, script_exporter will not do this for you.
 
 The optional `env` key allows to run the script with custom environment variables.
 
