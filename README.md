@@ -38,8 +38,7 @@ Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
 You can also deploy the script_exporter to Kubernetes via Helm:
 
 ```sh
-helm repo add ricoberger https://ricoberger.github.io/helm-charts
-helm install script-exporter ricoberger/script-exporter
+helm upgrade --install script-exporter oci://ghcr.io/ricoberger/charts/script-exporter --version 1.0.0
 ```
 
 ## Usage and configuration
@@ -124,7 +123,7 @@ scripts_configs:
   - <string>
 ```
 
-The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``. 
+The `name` of the script must be a valid Prometheus label value. The `command` string is the script which is executed with all arguments specified in `args`. To add dynamic arguments you can pass the `params` query parameter with a list of query parameters which values should be added as argument. The program will be executed directly, without a shell being invoked, and it is recommended that it be specified by path instead of relying on ``$PATH``.
 
 If `sudo` is defined and set to `true`, the command will be executed with privileged (root) permissions by executing the `command` with a pre-fixed `sudo`. Note that you still need to create the relevant sudoers entries, script_exporter will not do this for you.
 
