@@ -5,6 +5,7 @@ package log
 
 import (
 	"github.com/go-kit/log"
+	//nolint:staticcheck // SA1019
 	"github.com/prometheus/common/promlog"
 )
 
