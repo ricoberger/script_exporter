@@ -9,9 +9,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/prometheus/common/promlog"
 	"golang.org/x/sys/windows/svc"
 	el "golang.org/x/sys/windows/svc/eventlog"
+
+	//nolint:staticcheck // SA1019
+	"github.com/prometheus/common/promlog"
 )
 
 const ServiceName = "Script Exporter"
