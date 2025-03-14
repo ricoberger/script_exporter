@@ -31,8 +31,8 @@ use this configuration run the following command:
 To run the examples via Docker the following commands can be used:
 
 ```sh
-docker build -f ./Dockerfile -t ghcr.io/ricoberger/script_exporter:main .
-docker run --rm -it --name script_exporter -p 9469:9469 -v $(pwd)/examples:/examples ghcr.io/ricoberger/script_exporter:main -config.file /examples/config.yaml
+docker build -f ./Dockerfile -t ghcr.io/ricoberger/script_exporter:latest .
+docker run --rm -it --name script_exporter -p 9469:9469 -v $(pwd)/examples:/examples ghcr.io/ricoberger/script_exporter:latest -config.file /examples/config.yaml
 ```
 
 Then visit [http://localhost:9469](http://localhost:9469) in the browser of your
