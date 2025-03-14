@@ -94,3 +94,12 @@ Additional labels for the Service Monitor
 {{- toYaml .Values.serviceMonitor.labels }}
 {{- end }}
 {{- end }}
+
+{{/*
+Additional labels for the self Service Monitor
+*/}}
+{{- define "script-exporter.selfServiceMonitorLabels" -}}
+{{- if .Values.selfServiceMonitor.labels }}
+{{- toYaml .Values.selfServiceMonitor.labels }}
+{{- end }}
+{{- end }}

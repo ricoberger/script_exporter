@@ -28,14 +28,16 @@ image:
 ## the corresponding "securityContext" field.
 ## See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
 ##
-podSecurityContext: {}
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
 ## Specify security settings for the script_exporter Container. They override settings made at the Pod level via the
 ## "podSecurityContext" when there is overlap.
 ## See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
 ##
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -48,7 +50,8 @@ securityContext: {}
 ## specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after
 ## 'resources:'.
 ##
-resources: {}
+resources:
+  {}
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -74,7 +77,8 @@ affinity: {}
 ## Topology spread constraints rely on node labels to identify the topology domain(s) that each Node is in.
 ## See: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 ##
-topologySpreadConstraints: []
+topologySpreadConstraints:
+  []
   # - maxSkew: 1
   #   topologyKey: topology.kubernetes.io/zone
   #   whenUnsatisfiable: DoNotSchedule
@@ -85,7 +89,8 @@ topologySpreadConstraints: []
 ## Specify additional volumes for the script_exporter deployment.
 ## See: https://kubernetes.io/docs/concepts/storage/volumes/
 ##
-volumes: []
+volumes:
+  []
   # - name: scripts
   #   configMap:
   #     name: scripts
@@ -93,14 +98,16 @@ volumes: []
 ## Specify additional volumeMounts for the script_exporter container.
 ## See: https://kubernetes.io/docs/concepts/storage/volumes/
 ##
-volumeMounts: []
+volumeMounts:
+  []
   # - name: scripts
   #   mountPath: /scripts
   #   readOnly: true
 
 ## Specify additional environment variables for the script_exporter container.
 ##
-env: []
+env:
+  []
   # - name: MY_ENV_VAR
   #   value: MY_ENV_VALUE
 
@@ -134,17 +141,71 @@ serviceAccount:
 ##
 serviceMonitor:
   ## If true, a ServiceMonitor CRD is created for a prometheus operator
-  ## https://github.com/coreos/prometheus-operator for script-exporter itself
+  ## https://github.com/coreos/prometheus-operator for each target
   ##
-  selfMonitor:
-    enabled: false
-    additionalMetricsRelabels: {}
-    additionalRelabeling: []
-    labels: {}
-    path: /metrics
-    interval: 30s
-    scrapeTimeout: 30s
+  enabled: false
 
+  ## Namespace for the ServiceMonitor. Fallback to the the release namespace.
+  ##
+  namespace: ""
+
+  ## Interval at which metrics should be scraped. Fallback to the Prometheus default unless specified.
+  ##
+  interval: ""
+
+  ## Timeout after which the scrape is ended. Fallback to the Prometheus default unless specified.
+  ##
+  scrapeTimeout: ""
+
+  ## Additional labels that are used by the Prometheus installed in your cluster to select Service Monitors to work with
+  ## See: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#prometheusspec
+  ##
+  labels: {}
+
+  ## HonorLabels chooses the metric's labels on collisions with target labels.
+  ##
+  honorLabels: true
+
+  ## MetricRelabelConfigs to apply to samples before ingestion.
+  ##
+  metricRelabelings:
+    []
+    # - action: keep
+    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+    #   sourceLabels: [__name__]
+
+  ## RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds relabelings for a few
+  ## standard Kubernetes fields and replaces original scrape job name with __tmp_prometheus_job_name.
+  ##
+  relabelings:
+    []
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
+
+  ## Automatically create a serviceMonitor for each script defined in the 'config' section below
+  ## This option is mutaly exclusive with the following 'targets' list
+  ##
+  autoCreate:
+    enabled: true
+
+  targets:
+    []
+    # - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
+    #   script: ping                     # Name of the script to target.
+    #   labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
+    #   interval: 60s                    # Scraping interval. Overrides value set in `defaults`
+    #   scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
+    #   additionalMetricsRelabels: []    # List of metric relabeling actions to run
+    #   additionalRelabeling: []         # List of relabeling actions to run
+
+## Create a Service Monitor for the Prometheus Operator.
+## See: https://github.com/coreos/prometheus-operator
+##
+selfServiceMonitor:
   ## If true, a ServiceMonitor CRD is created for a prometheus operator
   ## https://github.com/coreos/prometheus-operator for each target
   ##
@@ -173,7 +234,8 @@ serviceMonitor:
 
   ## MetricRelabelConfigs to apply to samples before ingestion.
   ##
-  metricRelabelings: []
+  metricRelabelings:
+    []
     # - action: keep
     #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
     #   sourceLabels: [__name__]
@@ -181,28 +243,14 @@ serviceMonitor:
   ## RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds relabelings for a few
   ## standard Kubernetes fields and replaces original scrape job name with __tmp_prometheus_job_name.
   ##
-  relabelings: []
+  relabelings:
+    []
     # - sourceLabels: [__meta_kubernetes_pod_node_name]
     #   separator: ;
     #   regex: ^(.*)$
     #   targetLabel: nodename
     #   replacement: $1
     #   action: replace
-
-  ## Automatically create a serviceMonitor for each script defined in the 'config' section below
-  ## This option is mutaly exclusive with the following 'targets' list
-  ##
-  autoCreate:
-    enabled: true
-
-  targets: []
-    # - name: example                    # Human readable URL that will appear in Prometheus / AlertManager
-    #   script: ping                     # Name of the script to target.
-    #   labels: {}                       # Map of labels for ServiceMonitor. Overrides value set in `defaults`
-    #   interval: 60s                    # Scraping interval. Overrides value set in `defaults`
-    #   scrapeTimeout: 60s               # Scrape timeout. Overrides value set in `defaults`
-    #   additionalMetricsRelabels: []    # List of metric relabeling actions to run
-    #   additionalRelabeling: []         # List of relabeling actions to run
 
 ## The configuration file path for the script_exporter. It defaults to "/etc/script-exporter/config.yaml".
 configFile: ""

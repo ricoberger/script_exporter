@@ -23,6 +23,9 @@ spec:
       params:
         script:
           - {{ .name }}
+      {{- with $.Values.serviceMonitor.honorLabels }}
+      honorLabels: {{ . }}
+      {{- end }}
       metricRelabelings:
         - action: replace
           replacement: {{ .name }}
@@ -71,6 +74,9 @@ spec:
       params:
         script:
           - {{ .script }}
+      {{- with .honorLabels | default $.Values.serviceMonitor.honorLabels }}
+      honorLabels: {{ . }}
+      {{- end }}
       metricRelabelings:
         - action: replace
           replacement: {{ .script }}

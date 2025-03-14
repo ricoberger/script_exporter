@@ -1,29 +1,29 @@
-{{- if .Values.serviceMonitor.selfMonitor.enabled }}
+{{- if .Values.selfServiceMonitor.enabled }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
     {{- include "script-exporter.labels" . | nindent 4 }}
-    {{- include "script-exporter.serviceMonitorLabels" . | nindent 4 }}
+    {{- include "script-exporter.selfServiceMonitorLabels" . | nindent 4 }}
   name: {{ include "script-exporter.fullname" . }}
-  namespace: {{ default .Release.Namespace .Values.serviceMonitor.namespace }}
+  namespace: {{ default .Release.Namespace .Values.selfServiceMonitor.namespace }}
 spec:
   endpoints:
-    - port: http
-      {{- with .Values.serviceMonitor.interval }}
+    - path: /metrics
+      port: http
+      {{- with .Values.selfServiceMonitor.interval }}
       interval: {{ . }}
       {{- end }}
-      {{- with .Values.serviceMonitor.scrapeTimeout }}
+      {{- with .Values.selfServiceMonitor.scrapeTimeout }}
       scrapeTimeout: {{ . }}
       {{- end }}
-      path: /metrics
-      honorLabels: {{ .Values.serviceMonitor.honorLabels }}
-      {{- with .Values.serviceMonitor.metricRelabelings }}
+      honorLabels: {{ .Values.selfServiceMonitor.honorLabels }}
+      {{- with .Values.selfServiceMonitor.metricRelabelings }}
       metricRelabelings:
       {{ toYaml . | nindent 6 }}
       {{- end }}
-      {{- with .Values.serviceMonitor.relabelings }}
+      {{- with .Values.selfServiceMonitor.relabelings }}
       relabelings:
       {{ toYaml . | nindent 6 }}
       {{- end }}
