@@ -19,14 +19,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set Docker Tag
-        id: tag
-        run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo TAG=${GITHUB_REF:10} >> $GITHUB_ENV
-          else
-            echo TAG=main >> $GITHUB_ENV
-          fi
+      - name: Docker Metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            ricoberger/script_exporter
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{raw}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -57,9 +59,8 @@ jobs:
           platforms: linux/386,linux/amd64,linux/arm/v7,linux/arm64/v8
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ env.TAG }}
-            ricoberger/script_exporter:${{ env.TAG }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
 
   helm:
     name: Helm
