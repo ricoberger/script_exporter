@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/go-kit/log v0.2.1
-	github.com/golang-jwt/jwt/v4 v4.5.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.61.0
 	golang.org/x/sys v0.28.0
