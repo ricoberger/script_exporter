@@ -122,7 +122,7 @@ func (e *Exporter) metricsHandler(scriptName string, params url.Values, promethe
 			metric = fmt.Sprintf("%s%s", prefix, metric)
 			metrics := regex1.FindAllString(metric, -1)
 			if len(metrics) == 1 {
-				value := strings.Replace(metric[len(metrics[0]):], ",", ".", -1)
+				value := strings.ReplaceAll(metric[len(metrics[0]):], ",", ".")
 				if regex2.MatchString(metrics[0] + value) {
 					formattedOutput += fmt.Sprintf("%s%s\n", metrics[0], value)
 				}
