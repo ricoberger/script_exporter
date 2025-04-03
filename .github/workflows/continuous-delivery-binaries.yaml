@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           args: --config=./.github/golangci.yaml
           skip-cache: true
