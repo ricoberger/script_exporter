@@ -54,6 +54,9 @@ choice. There you have access to the following examples:
   Pass arguments to the script via the configuration file.
 - [metrics](http://localhost:9469/metrics): Shows internal metrics from the
   script exporter.
+- [sleepscript](http://localhost:9469/probe?script=sleepscript&params=seconds&seconds=20):
+  Execute a script which executes a `sleep` command with the duration provided
+  in the `seconds` parameter. The command will be canceled after 10 seconds.
 
 You can also deploy the script_exporter to Kubernetes via Helm:
 

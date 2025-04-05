@@ -40,6 +40,11 @@ scripts:
       - "120"
     timeout:
       enforced: true
+  - name: sleepscript
+    command: ./examples/sleepscript.sh
+    timeout:
+      max_timeout: 10
+      enforced: true
   - name: docker
     command: ./examples/docker.sh
   - name: args
