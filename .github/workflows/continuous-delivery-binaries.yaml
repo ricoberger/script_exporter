@@ -24,9 +24,6 @@ jobs:
 
       - name: Lint
         uses: golangci/golangci-lint-action@v7
-        with:
-          args: --config=./.github/golangci.yaml
-          skip-cache: true
 
       - name: Test
         run: go test ./...
