@@ -60,6 +60,19 @@ func runScript(name string, logger log.Logger, logEnv bool, timeout float64, enf
 	//nolint:gosec
 	cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
+	// When the executed script spawns it's own child processes (e.g. "sleep")
+	// the child process will not be killed when the context deadline is
+	// exceeded. Because "cmd.Wait()" waits for the command to exit and for
+	// outputs being copied it will only return if the child process also
+	// finishes. To enforce the timeout we can set "cmd.WaitDelay" to a non-zero
+	// value to ensure that the executet script is killed even if the io pipes
+	// are not closed.
+	//
+	// See:
+	//   - https://medium.com/@felixge/killing-a-child-process-and-all-of-its-children-in-go-54079af94773
+	//   - https://stackoverflow.com/q/71714228
+	cmd.WaitDelay = 1 * time.Millisecond
+
 	// Set environments variables
 	cmd.Env = os.Environ()
 	for key, value := range env {
