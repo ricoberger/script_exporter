@@ -5,14 +5,81 @@ on:
   push:
     branches:
       - main
-    tags:
-      - v*
+  pull_request:
+  release:
+    types:
+      - published
 
 jobs:
+  binaries:
+    name: Binaries
+    runs-on: ubuntu-latest
+    if:
+      github.event_name == 'pull_request' || (github.event_name == 'release' &&
+      github.event.action == 'published')
+    strategy:
+      matrix:
+        platform:
+          [
+            { os: "darwin", arch: "amd64" },
+            { os: "darwin", arch: "arm64" },
+            { os: "linux", arch: "amd64" },
+            { os: "linux", arch: "arm64" },
+            { os: "windows", arch: "amd64" },
+            { os: "windows", arch: "arm64" },
+          ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install Dependencies
+        run: |
+          go mod download
+
+      - name: Build
+        run: |
+          make build
+          cp bin/script_exporter script_exporter
+          tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter
+
+      - name: Upload Artifact (PR)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name:
+            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
+            }}.tar.gz
+          path:
+            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
+            }}.tar.gz
+          if-no-files-found: error
+
+      - name: Upload Artifact (Release)
+        uses: shogo82148/actions-upload-release-asset@v1
+        if:
+          ${{ github.event_name == 'release' && github.event.action ==
+          'published' }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path:
+            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
+            }}.tar.gz
+
   docker:
     name: Docker
     runs-on: ubuntu-latest
-
+    if:
+      github.ref == 'refs/heads/main' || (github.event_name == 'release' &&
+      github.event.action == 'published')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +92,6 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            ricoberger/script_exporter
           tags: |
             type=ref,event=branch
             type=semver,pattern={{raw}}
@@ -35,12 +101,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

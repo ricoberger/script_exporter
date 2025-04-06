@@ -1,0 +1,35 @@
+scripts:
+  - name: output
+    command:
+      - ./prober/scripts/output.sh
+  - name: ping
+    command:
+      - ./prober/scripts/ping.sh
+    output:
+      ignore: true
+  - name: showtimeout
+    command:
+      - ./prober/scripts/showtimeout.sh
+    timeout:
+      max_timeout: 60
+  - name: docker
+    command:
+      - ./prober/scripts/docker.sh
+  - name: sleep
+    command:
+      - ./prober/scripts/sleep.sh
+    timeout:
+      max_timeout: 10
+      enforced: true
+      wait_delay: 0.01
+    discovery:
+      params:
+        seconds: "20"
+  - name: cache
+    command:
+      - ./prober/scripts/sleep.sh
+    cache:
+      duration: 60
+    discovery:
+      params:
+        seconds: "5"

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 # Run the following command to start a docker container using the i386/busybox image.
 # docker run --name busybox -it --rm i386/busybox

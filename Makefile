@@ -1,108 +1,20 @@
-WHAT := script_exporter
+BRANCH    ?= $(shell git rev-parse --abbrev-ref HEAD)
+BUILDTIME ?= $(shell date '+%Y-%m-%d@%H:%M:%S')
+BUILDUSER ?= $(shell id -un)
+REVISION  ?= $(shell git rev-parse HEAD)
+VERSION   ?= $(shell git describe --tags)
 
-PROJECT     ?= script_exporter
-REPO        ?= github.com/ricoberger/script_exporter
-PWD         ?= $(shell pwd)
-VERSION     ?= $(shell git describe --tags)
-REVISION    ?= $(shell git rev-parse HEAD)
-BRANCH      ?= $(shell git rev-parse --abbrev-ref HEAD)
-BUILDUSER   ?= $(shell id -un)
-BUILDTIME   ?= $(shell date '+%Y-%m-%d@%H:%M:%S')
-
-.PHONY: build build-darwin-amd64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64 clean release release-major release-minor release-patch
-
+.PHONY: build
 build:
-	for target in $(WHAT); do \
-		go build -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target ./cmd/$$target; \
-	done
+	@go build -ldflags "-X github.com/prometheus/common/version.Version=${VERSION} \
+		-X github.com/prometheus/common/version.Revision=${REVISION} \
+		-X github.com/prometheus/common/version.Branch=${BRANCH} \
+		-X github.com/prometheus/common/version.BuildUser=${BUILDUSER} \
+		-X github.com/prometheus/common/version.BuildDate=${BUILDTIME}" \
+		-o ./bin/script_exporter ./cmd;
 
-build-darwin-amd64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-darwin-amd64 ./cmd/$$target; \
-	done
-
-build-darwin-arm64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=arm64 GOOS=darwin go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-darwin-arm64 ./cmd/$$target; \
-	done
-
-build-linux-amd64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-linux-amd64 ./cmd/$$target; \
-	done
-
-build-linux-armv7:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=arm GOARM=7 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-linux-armv7 ./cmd/$$target; \
-	done
-
-build-linux-arm64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-		-X ${REPO}/pkg/version.Revision=${REVISION} \
-		-X ${REPO}/pkg/version.Branch=${BRANCH} \
-		-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-		-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-		-o ./bin/$$target-linux-arm64 ./cmd/$$target; \
-		done
-
-build-windows-amd64:
-	for target in $(WHAT); do \
-		CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -a -installsuffix cgo -ldflags "-X ${REPO}/pkg/version.Version=${VERSION} \
-			-X ${REPO}/pkg/version.Revision=${REVISION} \
-			-X ${REPO}/pkg/version.Branch=${BRANCH} \
-			-X ${REPO}/pkg/version.BuildUser=${BUILDUSER} \
-			-X ${REPO}/pkg/version.BuildDate=${BUILDTIME}" \
-			-o ./bin/$$target-windows-amd64.exe ./cmd/$$target/${WHAT}_windows.go; \
-	done
-
-clean:
-	rm -rf ./bin
-
-release: clean build-darwin-amd64 build-darwin-arm64 build-linux-amd64 build-linux-armv7 build-linux-arm64 build-windows-amd64
-
-release-major:
-	$(eval MAJORVERSION=$(shell git describe --tags --abbrev=0 | sed s/v// | awk -F. '{print "v"$$1+1".0.0"}'))
-	git checkout main
-	git pull
-	git tag -a $(MAJORVERSION) -m 'release $(MAJORVERSION)'
-	git push origin --tags
-
-release-minor:
-	$(eval MINORVERSION=$(shell git describe --tags --abbrev=0 | sed s/v// | awk -F. '{print "v"$$1"."$$2+1".0"}'))
-	git checkout main
-	git pull
-	git tag -a $(MINORVERSION) -m 'release $(MINORVERSION)'
-	git push origin --tags
-
-release-patch:
-	$(eval PATCHVERSION=$(shell git describe --tags --abbrev=0 | sed s/v// | awk -F. '{print "v"$$1"."$$2"."$$3+1}'))
-	git checkout main
-	git pull
-	git tag -a $(PATCHVERSION) -m 'release $(PATCHVERSION)'
-	git push origin --tags
+.PHONY: test
+test:
+	# Run tests and generate coverage report. To view the coverage report in a
+	# browser run "go tool cover -html=coverage.out".
+	go test -covermode=atomic -coverpkg=./... -coverprofile=coverage.out -v ./...
