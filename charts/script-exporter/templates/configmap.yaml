@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "script-exporter.labels" . | nindent 4 }}
 data:
-  config.yaml: |
+  scripts.yaml: |
 {{ tpl .Values.config . | indent 4 }}
 
 {{- with .Values.scripts }}
