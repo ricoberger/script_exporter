@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 echo "# HELP script_has_timeout Whether this script is run with a timeout."
 echo "# TYPE script_has_timeout gauge"
 if [ -z "$SCRIPT_TIMEOUT" ]; then

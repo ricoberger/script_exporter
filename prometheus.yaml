@@ -1,0 +1,80 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  # Scrape configuration for all of the example scripts.
+  - job_name: output
+    metrics_path: /probe
+    params:
+      script:
+        - output
+    static_configs:
+      - targets:
+          - script_exporter:9469
+
+  - job_name: ping
+    metrics_path: /probe
+    params:
+      script:
+        - ping
+      params:
+        - target
+    static_configs:
+      - targets:
+          - example.com
+          - example.org
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: script_exporter:9469
+      - source_labels: [__param_target]
+        target_label: target
+
+  - job_name: showtimeout
+    metrics_path: /probe
+    params:
+      script:
+        - showtimeout
+    static_configs:
+      - targets:
+          - script_exporter:9469
+
+  - job_name: sleep
+    metrics_path: /probe
+    params:
+      script:
+        - sleep
+      params:
+        - seconds
+      seconds:
+        - "20"
+    static_configs:
+      - targets:
+          - script_exporter:9469
+
+  - job_name: cache
+    metrics_path: /probe
+    params:
+      script:
+        - cache
+      params:
+        - seconds
+      seconds:
+        - "5"
+    static_configs:
+      - targets:
+          - script_exporter:9469
+
+  # Configuration to get the metrics of the Script Exporter.
+  - job_name: "script_exporter"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - script_exporter:9469
+
+  # Configuration for the Prometheus discovery feature of the Script Exporter.
+  - job_name: scripts
+    http_sd_configs:
+      - url: http://script_exporter:9469/discovery

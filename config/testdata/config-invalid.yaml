@@ -1,0 +1,3 @@
+scripts:
+  - name: output
+    command: ./prober/scripts/output.sh

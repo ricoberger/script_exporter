@@ -1,0 +1,24 @@
+services:
+  script-exporter:
+    container_name: script_exporter
+    build:
+      context: .
+    restart: always
+    ports:
+      - 9469:9469
+    volumes:
+      - ./scripts.yaml:/script_exporter/scripts.yaml
+      - ./prober/scripts:/script_exporter/prober/scripts
+
+  prometheus:
+    container_name: prometheus
+    image: quay.io/prometheus/prometheus:v3.2.1
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
+    depends_on:
+      - script-exporter
