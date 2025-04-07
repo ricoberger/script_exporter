@@ -136,6 +136,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Lint
+        run: |
+          helm lint ./charts/script-exporter
+
+      - name: Template
+        run: |
+          helm template ./charts/script-exporter
+
       - name: Set Version
         id: version
         run: |

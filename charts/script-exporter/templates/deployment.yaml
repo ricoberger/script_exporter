@@ -37,8 +37,10 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.args }}
           args:
-            - -config.file={{ .Values.configFile | default "/etc/script-exporter/config.yaml" }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 9469
@@ -55,7 +57,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: config
-              mountPath: /etc/script-exporter
+              mountPath: /script_exporter/scripts
               readOnly: true
             {{- if .Values.volumeMounts }}
             {{- toYaml .Values.volumeMounts | nindent 12 }}
