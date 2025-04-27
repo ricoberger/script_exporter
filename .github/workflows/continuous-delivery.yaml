@@ -47,9 +47,19 @@ jobs:
 
       - name: Build
         run: |
+          export GOOS=${{ matrix.platform.os }}
+          export GOARCH=${{ matrix.platform.arch }}
+          export CGO_ENABLED=0
+
           make build
-          cp bin/script_exporter script_exporter
-          tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter
+
+          if [[ ${{ matrix.platform.os }} == "windows" ]]; then
+            cp bin/script_exporter script_exporter.exe
+            tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter.exe
+          else
+            cp bin/script_exporter script_exporter
+            tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter
+          fi
 
       - name: Upload Artifact (PR)
         if: ${{ github.event_name == 'pull_request' }}
