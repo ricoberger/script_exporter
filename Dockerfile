@@ -1,4 +1,4 @@
-FROM golang:1.24.3 AS build
+FROM golang:1.24.4 AS build
 WORKDIR /script_exporter
 COPY go.mod go.sum /script_exporter/
 RUN go mod download
