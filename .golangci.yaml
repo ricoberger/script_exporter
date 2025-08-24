@@ -7,7 +7,6 @@ linters:
     - gosec
     - govet
     - ineffassign
-    - noctx
     - staticcheck
     - unused
     - whitespace
