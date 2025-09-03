@@ -1,5 +1,7 @@
 ---
 version: "2"
+run:
+  modules-download-mode: readonly
 linters:
   default: none
   enable:
@@ -7,6 +9,7 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - noctx
     - staticcheck
     - unused
     - whitespace
