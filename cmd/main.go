@@ -33,7 +33,9 @@ var (
 	sc = config.NewSafeConfig(prometheus.DefaultRegisterer)
 
 	configFiles         = kingpin.Flag("config.files", "Configuration files. To specify multiple configuration files glob patterns can be used.").Default("scripts.yaml").String()
+	configURL           = kingpin.Flag("config.url", "URL to load configuration from (overrides --config.files).").Default("").String()
 	configCheck         = kingpin.Flag("config.check", "If true, validate the configuration files and then exit.").Default().Bool()
+	configReloadInterval = kingpin.Flag("config.reload-interval", "Interval for automatic config reload (e.g., 5m). If 0, no periodic reload.").Default("0").Duration()
 	logEnv              = kingpin.Flag("log.env", "If true, environment variables passed to a script will be logged.").Default().Bool()
 	scriptNoArgs        = kingpin.Flag("script.no-args", "Restrict script to accept arguments.").Default().Bool()
 	scriptTimeoutOffset = kingpin.Flag("script.timeout-offset", "Offset to subtract from timeout in seconds.").Default("0.5").Float64()
@@ -61,17 +63,26 @@ func run(stopCh chan bool) int {
 	logger.Info("Starting script_exporter", "version", version.Info())
 	logger.Info(version.BuildContext())
 
-	if err := sc.ReloadConfig(*configFiles, logger); err != nil {
+	// Set config source based on flags
+	if *configURL != "" {
+		sc.ConfigSource = *configURL
+		sc.IsURL = true
+	} else {
+		sc.ConfigSource = *configFiles
+		sc.IsURL = false
+	}
+
+	if err := sc.ReloadConfig(logger); err != nil {
 		logger.Error("Error loading config", "err", err)
 		return 1
 	}
 
 	if *configCheck {
-		logger.Info("Config files are ok, exiting...")
+		logger.Info("Config is ok, exiting...")
 		return 0
 	}
 
-	logger.Info("Loaded config files")
+	logger.Info("Loaded config")
 
 	// Infer or set Script Exporter externalURL
 	listenAddrs := toolkitFlags.WebListenAddresses
@@ -109,17 +120,17 @@ func run(stopCh chan bool) int {
 		for {
 			select {
 			case <-hup:
-				if err := sc.ReloadConfig(*configFiles, logger); err != nil {
+				if err := sc.ReloadConfig(logger); err != nil {
 					logger.Error("Error reloading config", "err", err)
 					continue
 				}
-				logger.Info("Reloaded config file")
+				logger.Info("Reloaded config")
 			case rc := <-reloadCh:
-				if err := sc.ReloadConfig(*configFiles, logger); err != nil {
+				if err := sc.ReloadConfig(logger); err != nil {
 					logger.Error("Error reloading config", "err", err)
 					rc <- err
 				} else {
-					logger.Info("Reloaded config file")
+					logger.Info("Reloaded config")
 					rc <- nil
 				}
 			}
@@ -220,6 +231,23 @@ func run(stopCh chan bool) int {
 			close(srvc)
 		}
 	}()
+
+	// Periodic reload if interval is set
+	if *configReloadInterval > 0 {
+		ticker := time.NewTicker(*configReloadInterval)
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					if err := sc.ReloadConfig(logger); err != nil {
+						logger.Error("Periodic reload failed", "err", err)
+					} else {
+						logger.Info("Periodic config reloaded")
+					}
+				}
+			}
+		}()
+	}
 
 	for {
 		select {

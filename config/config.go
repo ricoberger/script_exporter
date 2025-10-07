@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -64,7 +66,9 @@ type Discovery struct {
 
 type SafeConfig struct {
 	sync.RWMutex
-	C                   *Config
+	C            *Config
+	ConfigSource string
+	IsURL        bool
 	configReloadSuccess prometheus.Gauge
 	configReloadSeconds prometheus.Gauge
 }
@@ -81,10 +85,44 @@ func NewSafeConfig(reg prometheus.Registerer) *SafeConfig {
 		Name:      "config_last_reload_success_timestamp_seconds",
 		Help:      "Timestamp of the last successful configuration reload.",
 	})
-	return &SafeConfig{C: &Config{}, configReloadSuccess: configReloadSuccess, configReloadSeconds: configReloadSeconds}
+	return &SafeConfig{
+		C:                   &Config{},
+		ConfigSource:        "",
+		IsURL:               false,
+		configReloadSuccess: configReloadSuccess,
+		configReloadSeconds: configReloadSeconds,
+	}
 }
 
-func (sc *SafeConfig) ReloadConfig(configFiles string, logger *slog.Logger) (err error) {
+func (sc *SafeConfig) loadFromURL(logger *slog.Logger) error {
+	resp, err := http.Get(sc.ConfigSource)
+	if err != nil {
+		return fmt.Errorf("failed to fetch config from %s: %w", sc.ConfigSource, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d from %s", resp.StatusCode, sc.ConfigSource)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var c Config
+	if err := yaml.Unmarshal(body, &c); err != nil {
+		return fmt.Errorf("failed to parse YAML from URL: %w", err)
+	}
+
+	sc.Lock()
+	sc.C = &c
+	sc.Unlock()
+
+	return nil
+}
+
+func (sc *SafeConfig) ReloadConfig(logger *slog.Logger) (err error) {
 	var c = &Config{}
 	defer func() {
 		if err != nil {
@@ -95,9 +133,17 @@ func (sc *SafeConfig) ReloadConfig(configFiles string, logger *slog.Logger) (err
 		}
 	}()
 
-	files, err := filepath.Glob(configFiles)
+	if sc.IsURL {
+		return sc.loadFromURL(logger)
+	}
+
+	files, err := filepath.Glob(sc.ConfigSource)
 	if err != nil {
 		return err
+	}
+
+	if len(files) == 0 {
+		return fmt.Errorf("no config files found matching %s", sc.ConfigSource)
 	}
 
 	for _, file := range files {
@@ -105,13 +151,13 @@ func (sc *SafeConfig) ReloadConfig(configFiles string, logger *slog.Logger) (err
 
 		yamlReader, err := os.Open(file)
 		if err != nil {
-			return fmt.Errorf("error reading config file: %s", err)
+			return fmt.Errorf("error reading config file %s: %w", file, err)
 		}
 		defer yamlReader.Close()
 		decoder := yaml.NewDecoder(yamlReader, yaml.DisallowUnknownField())
 
 		if err = decoder.Decode(fc); err != nil {
-			return fmt.Errorf("error parsing config file: %s", err)
+			return fmt.Errorf("error parsing config file %s: %w", file, err)
 		}
 
 		c.Scripts = append(c.Scripts, fc.Scripts...)
