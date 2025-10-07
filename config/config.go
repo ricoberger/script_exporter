@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
@@ -66,9 +68,10 @@ type Discovery struct {
 
 type SafeConfig struct {
 	sync.RWMutex
-	C            *Config
-	ConfigSource string
-	IsURL        bool
+	C               *Config
+	ConfigSource    string
+	IsURL           bool
+	lastConfigHash  string // Hash of the last loaded config body from URL
 	configReloadSuccess prometheus.Gauge
 	configReloadSeconds prometheus.Gauge
 }
@@ -86,9 +89,10 @@ func NewSafeConfig(reg prometheus.Registerer) *SafeConfig {
 		Help:      "Timestamp of the last successful configuration reload.",
 	})
 	return &SafeConfig{
-		C:                   &Config{},
-		ConfigSource:        "",
-		IsURL:               false,
+		C:                  &Config{},
+		ConfigSource:       "",
+		IsURL:              false,
+		lastConfigHash:     "",
 		configReloadSuccess: configReloadSuccess,
 		configReloadSeconds: configReloadSeconds,
 	}
@@ -110,6 +114,17 @@ func (sc *SafeConfig) loadFromURL(logger *slog.Logger) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	// Compute hash of the body
+	hash := sha256.Sum256(body)
+	newHash := hex.EncodeToString(hash[:])
+
+	// Check if changed
+	if newHash == sc.lastConfigHash {
+		logger.Debug("No change in config detected from URL", "url", sc.ConfigSource)
+		return nil
+	}
+
+	// Parse and apply new config
 	var c Config
 	if err := yaml.Unmarshal(body, &c); err != nil {
 		return fmt.Errorf("failed to parse YAML from URL: %w", err)
@@ -117,8 +132,10 @@ func (sc *SafeConfig) loadFromURL(logger *slog.Logger) error {
 
 	sc.Lock()
 	sc.C = &c
+	sc.lastConfigHash = newHash
 	sc.Unlock()
 
+	logger.Info("Config reloaded from URL due to content change", "url", sc.ConfigSource)
 	return nil
 }
 

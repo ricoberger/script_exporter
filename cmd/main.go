@@ -240,9 +240,9 @@ func run(stopCh chan bool) int {
 				select {
 				case <-ticker.C:
 					if err := sc.ReloadConfig(logger); err != nil {
-						logger.Error("Periodic reload failed", "err", err)
+						logger.Error("Periodic config check failed", "err", err)
 					} else {
-						logger.Info("Periodic config reloaded")
+						logger.Debug("Periodic config check completed")
 					}
 				}
 			}
