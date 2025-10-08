@@ -10,7 +10,9 @@ import (
 func TestNewSafeConfig(t *testing.T) {
 	t.Run("should load configuration", func(t *testing.T) {
 		sc := NewSafeConfig(prometheus.NewRegistry())
-		err := sc.ReloadConfig("./testdata/config-valid.yaml", nil)
+		sc.ConfigSource = "./testdata/config-valid.yaml"
+
+		err := sc.ReloadConfig(nil)
 
 		require.NoError(t, err)
 		require.NotNil(t, sc.C)
@@ -29,7 +31,9 @@ func TestNewSafeConfig(t *testing.T) {
 
 	t.Run("should return error for invalid configuration", func(t *testing.T) {
 		sc := NewSafeConfig(prometheus.NewRegistry())
-		err := sc.ReloadConfig("./testdata/config-invalid.yaml", nil)
+		sc.ConfigSource = "./testdata/config-invalid.yaml"
+
+		err := sc.ReloadConfig(nil)
 
 		require.Error(t, err)
 	})

@@ -32,19 +32,19 @@ import (
 var (
 	sc = config.NewSafeConfig(prometheus.DefaultRegisterer)
 
-	configFiles         = kingpin.Flag("config.files", "Configuration files. To specify multiple configuration files glob patterns can be used.").Default("scripts.yaml").String()
-	configURL           = kingpin.Flag("config.url", "URL to load configuration from (overrides --config.files).").Default("").String()
-	configCheck         = kingpin.Flag("config.check", "If true, validate the configuration files and then exit.").Default().Bool()
+	configFiles          = kingpin.Flag("config.files", "Configuration files. To specify multiple configuration files glob patterns can be used.").Default("scripts.yaml").String()
+	configURL            = kingpin.Flag("config.url", "URL to load configuration from (overrides --config.files).").Default("").String()
+	configCheck          = kingpin.Flag("config.check", "If true, validate the configuration files and then exit.").Default().Bool()
 	configReloadInterval = kingpin.Flag("config.reload-interval", "Interval for automatic config reload (e.g., 5m). If 0, no periodic reload.").Default("0").Duration()
-	logEnv              = kingpin.Flag("log.env", "If true, environment variables passed to a script will be logged.").Default().Bool()
-	scriptNoArgs        = kingpin.Flag("script.no-args", "Restrict script to accept arguments.").Default().Bool()
-	scriptTimeoutOffset = kingpin.Flag("script.timeout-offset", "Offset to subtract from timeout in seconds.").Default("0.5").Float64()
-	externalURL         = kingpin.Flag("web.external-url", "The URL under which Script Exporter is externally reachable (for example, if Script Exporter is served via a reverse proxy). Used for generating relative and absolute links back to Script Exporter itself. If the URL has a path portion, it will be used to prefix all HTTP endpoints served by Script Exporter. If omitted, relevant URL components will be derived automatically.").PlaceHolder("<url>").String()
-	routePrefix         = kingpin.Flag("web.route-prefix", "Prefix for the internal routes of web endpoints. Defaults to path of --web.external-url.").PlaceHolder("<path>").String()
-	discoveryHost       = kingpin.Flag("discovery.host", "Host for service discovery.").Default("").String()
-	discoveryPort       = kingpin.Flag("discovery.port", "Port for service discovery.").Default("").String()
-	discoveryScheme     = kingpin.Flag("discovery.scheme", "Scheme for service discovery.").Default("").String()
-	toolkitFlags        = webflag.AddFlags(kingpin.CommandLine, ":9469")
+	logEnv               = kingpin.Flag("log.env", "If true, environment variables passed to a script will be logged.").Default().Bool()
+	scriptNoArgs         = kingpin.Flag("script.no-args", "Restrict script to accept arguments.").Default().Bool()
+	scriptTimeoutOffset  = kingpin.Flag("script.timeout-offset", "Offset to subtract from timeout in seconds.").Default("0.5").Float64()
+	externalURL          = kingpin.Flag("web.external-url", "The URL under which Script Exporter is externally reachable (for example, if Script Exporter is served via a reverse proxy). Used for generating relative and absolute links back to Script Exporter itself. If the URL has a path portion, it will be used to prefix all HTTP endpoints served by Script Exporter. If omitted, relevant URL components will be derived automatically.").PlaceHolder("<url>").String()
+	routePrefix          = kingpin.Flag("web.route-prefix", "Prefix for the internal routes of web endpoints. Defaults to path of --web.external-url.").PlaceHolder("<path>").String()
+	discoveryHost        = kingpin.Flag("discovery.host", "Host for service discovery.").Default("").String()
+	discoveryPort        = kingpin.Flag("discovery.port", "Port for service discovery.").Default("").String()
+	discoveryScheme      = kingpin.Flag("discovery.scheme", "Scheme for service discovery.").Default("").String()
+	toolkitFlags         = webflag.AddFlags(kingpin.CommandLine, ":9469")
 )
 
 func init() {
@@ -236,14 +236,11 @@ func run(stopCh chan bool) int {
 	if *configReloadInterval > 0 {
 		ticker := time.NewTicker(*configReloadInterval)
 		go func() {
-			for {
-				select {
-				case <-ticker.C:
-					if err := sc.ReloadConfig(logger); err != nil {
-						logger.Error("Periodic config check failed", "err", err)
-					} else {
-						logger.Debug("Periodic config check completed")
-					}
+			for range ticker.C {
+				if err := sc.ReloadConfig(logger); err != nil {
+					logger.Error("Periodic config check failed", "err", err)
+				} else {
+					logger.Debug("Periodic config check completed")
 				}
 			}
 		}()

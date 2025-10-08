@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -68,10 +69,10 @@ type Discovery struct {
 
 type SafeConfig struct {
 	sync.RWMutex
-	C               *Config
-	ConfigSource    string
-	IsURL           bool
-	lastConfigHash  string // Hash of the last loaded config body from URL
+	C                   *Config
+	ConfigSource        string
+	IsURL               bool
+	lastConfigHash      string // Hash of the last loaded config body from URL
 	configReloadSuccess prometheus.Gauge
 	configReloadSeconds prometheus.Gauge
 }
@@ -89,17 +90,23 @@ func NewSafeConfig(reg prometheus.Registerer) *SafeConfig {
 		Help:      "Timestamp of the last successful configuration reload.",
 	})
 	return &SafeConfig{
-		C:                  &Config{},
-		ConfigSource:       "",
-		IsURL:              false,
-		lastConfigHash:     "",
+		C:                   &Config{},
+		ConfigSource:        "",
+		IsURL:               false,
+		lastConfigHash:      "",
 		configReloadSuccess: configReloadSuccess,
 		configReloadSeconds: configReloadSeconds,
 	}
 }
 
 func (sc *SafeConfig) loadFromURL(logger *slog.Logger) error {
-	resp, err := http.Get(sc.ConfigSource)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sc.ConfigSource, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for %s: %w", sc.ConfigSource, err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch config from %s: %w", sc.ConfigSource, err)
 	}
