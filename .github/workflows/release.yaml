@@ -5,12 +5,37 @@ on:
   push:
     branches:
       - main
+    # Pro plný release na tags (doporučuji): přidej tags: ['v*']
 
 permissions:
-  contents: read
+  contents: write  # Pro upload assets a release
+  pull-requests: write  # Pro release-drafter
 
 jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Pro git tag info
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'  # Uprav na tvou verzi
+
+      - name: Run tests
+        run: go test ./... -v
+
+      - name: Run lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.1  # Nebo go install
+          golangci-lint run ./...
+
   changelog:
+    needs: test  # Běží jen pokud testy OK
     permissions:
       contents: write
       pull-requests: write
@@ -24,3 +49,78 @@ jobs:
           disable-autolabeler: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: changelog  # Závisí na changelog
+    name: Build binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        arch: [amd64, arm64]  # Přidej arm64 jen pro Linux, pokud potřebuješ; pro Windows jen amd64
+        exclude:
+          - os: windows-latest
+            arch: arm64  # Windows ARM není standard, uprav si
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(git describe --tags --always --dirty)".$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build binary
+        run: |
+          OS=$(echo ${{ matrix.os }} | sed 's/-latest//g' | sed 's/windows/mingw/')
+          ARCH=${{ matrix.arch }}
+          if [ "$OS" = "ubuntu" ]; then OS="linux"; fi
+          if [ "$OS" = "mingw" ]; then EXT=".exe"; else EXT=""; fi
+          CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.version }}" -o "script_exporter-${OS}-${ARCH}${EXT}" ./cmd/main.go
+          zip -r "script_exporter-${OS}-${ARCH}.zip" "script_exporter-${OS}-${ARCH}${EXT}"  # Pro snadný download
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: script_exporter-${{ matrix.os }}-${{ matrix.arch }}
+          path: script_exporter-*.zip
+          retention-days: 5
+
+  publish:
+    needs: build  # Závisí na build
+    if: startsWith(github.ref, 'refs/tags/')  # Publish jen na tagu; pro draft na main smaž tuto řádku
+    name: Publish release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-from-file CHANGELOG.md  # Nebo tvůj changelog soubor
+          # Upload všechny artifacts do release
+          for file in artifacts/*/*; do
+            gh release upload "${GITHUB_REF#refs/tags/}" "$file" --clobber
+          done
