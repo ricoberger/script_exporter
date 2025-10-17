@@ -1,10 +1,14 @@
 package config
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/goccy/go-yaml"
@@ -85,6 +89,16 @@ func NewSafeConfig(reg prometheus.Registerer) *SafeConfig {
 }
 
 func (sc *SafeConfig) ReloadConfig(configFiles string, logger *slog.Logger) (err error) {
+	if strings.HasPrefix(configFiles, "https://") || strings.HasPrefix(configFiles, "http://") {
+		logger.Debug("Reload configuration from url", "url", configFiles)
+		return sc.reloadConfigFromUrl(configFiles)
+	}
+
+	logger.Debug("Reload configuration from files", "files", configFiles)
+	return sc.reloadConfigFromFiles(configFiles)
+}
+
+func (sc *SafeConfig) reloadConfigFromFiles(configFiles string) (err error) {
 	var c = &Config{}
 	defer func() {
 		if err != nil {
@@ -119,6 +133,40 @@ func (sc *SafeConfig) ReloadConfig(configFiles string, logger *slog.Logger) (err
 
 	sc.Lock()
 	sc.C = c
+	sc.Unlock()
+
+	return nil
+}
+
+func (sc *SafeConfig) reloadConfigFromUrl(configFiles string) (err error) {
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, configFiles, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to get config from: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invalid http status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var c Config
+	if err := yaml.Unmarshal(body, &c); err != nil {
+		return fmt.Errorf("error parsing config file: %w", err)
+	}
+
+	sc.Lock()
+	sc.C = &c
 	sc.Unlock()
 
 	return nil

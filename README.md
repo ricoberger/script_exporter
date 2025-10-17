@@ -90,6 +90,8 @@ Flags:
   -h, --[no-]help                Show context-sensitive help (also try --help-long and --help-man).
       --config.files="scripts.yaml"
                                  Configuration files. To specify multiple configuration files glob patterns can be used.
+      --config.reload-interval=1h
+                                 Reload interval of the configuration file.
       --[no-]config.check        If true, validate the configuration files and then exit.
       --[no-]log.env             If true, environment variables passed to a script will be logged.
       --[no-]script.no-args      Restrict script to accept arguments.
