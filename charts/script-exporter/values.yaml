@@ -109,6 +109,15 @@ env: []
   # - name: MY_ENV_VAR
   #   value: MY_ENV_VALUE
 
+## Specify additional environment variables for the container.
+## See: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+##
+envFrom: []
+  ## For example the following can be used to set all keys from a secret named mysecret (must be created manually) as
+  ## env variables in the container.
+  # - secretRef:
+  #     name: mysecret
+
 ## Specify additional labels and annotations for the created Pods.
 ##
 podAnnotations: {}
