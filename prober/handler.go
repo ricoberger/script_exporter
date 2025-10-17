@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 )
 
 type scriptResult struct {
@@ -325,7 +326,6 @@ func getFormattedOutput(script *config.Script, logger *slog.Logger, output strin
 	}
 
 	var formattedOutput string
-	var parser expfmt.TextParser
 
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	for scanner.Scan() {
@@ -333,13 +333,30 @@ func getFormattedOutput(script *config.Script, logger *slog.Logger, output strin
 			continue
 		}
 
-		_, err := parser.TextToMetricFamilies(strings.NewReader(fmt.Sprintf("%s\n", scanner.Text())))
-		if err != nil {
-			logger.Debug("Error parsing metric families", slog.String("script", script.Name), slog.String("output", scanner.Text()), slog.Any("error", err))
-		} else {
+		if isValidOutput(script, fmt.Sprintf("%s\n", scanner.Text()), logger) {
 			formattedOutput += fmt.Sprintf("%s\n", scanner.Text())
 		}
 	}
 
 	return formattedOutput
+}
+
+func isValidOutput(script *config.Script, output string, logger *slog.Logger) bool {
+	logger.Debug("Validating script output", slog.String("script", script.Name), slog.String("output", output))
+
+	defer func() {
+		if recover() != nil {
+			return
+		}
+	}()
+
+	parser := expfmt.NewTextParser(model.UTF8Validation)
+
+	_, err := parser.TextToMetricFamilies(strings.NewReader(output))
+	if err != nil {
+		logger.Debug("Error parsing metric families", slog.String("script", script.Name), slog.String("output", output), slog.Any("error", err))
+		return false
+	}
+
+	return true
 }
