@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload Artifact (PR)
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name:
             script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
