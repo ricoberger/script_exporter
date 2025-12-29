@@ -44,8 +44,9 @@ type Script struct {
 }
 
 type Output struct {
-	Ignore        bool `yaml:"ignore"`
-	IgnoreOnError bool `yaml:"ignore_on_error"`
+	Ignore        bool   `yaml:"ignore"`
+	IgnoreOnError bool   `yaml:"ignore_on_error"`
+	Format        string `yaml:"format"`
 }
 
 type Timeout struct {

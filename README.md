@@ -62,6 +62,8 @@ choice. There you have access to the following examples:
   Execute a script, which executes a `sleep` command with the duration provided
   in the `seconds` parameter. The output of the script will be cached for 60
   seconds, so that follow up requests will be faaster.
+- [nagios](http://localhost:9469/probe?script=nagios): Parses the output of a
+  Nagios plugin and returns the relevant Prometheus metrics.
 
 You can also deploy the Script Exporter to Kubernetes via Helm:
 
@@ -161,6 +163,11 @@ scripts:
       # If set to "true" the output of a script will be ignored if the script
       # returned an error and only the default metrics will be exported.
       ignore_on_error: <boolean>
+      # The output format of the script. By default the exporter expects valid
+      # Prometheus metrics.
+      #
+      # Possible values are "prometheus" and "nagios".
+      format: <string>
     # Timeout configuration for the script. By default the timeout specified via
     # the "timeout" parameter or the "scrape_timeout" Prometheus configuration
     # will be used.

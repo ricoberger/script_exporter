@@ -33,3 +33,8 @@ scripts:
     discovery:
       params:
         seconds: "5"
+  - name: nagios
+    command:
+      - ./prober/scripts/nagios.sh
+    output:
+      format: nagios

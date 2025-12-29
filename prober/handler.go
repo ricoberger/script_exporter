@@ -16,6 +16,8 @@ import (
 
 	"github.com/ricoberger/script_exporter/config"
 
+	"github.com/influxdata/telegraf/plugins/parsers/nagios"
+	prometheusserializer "github.com/influxdata/telegraf/plugins/serializers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/expfmt"
@@ -325,6 +327,10 @@ func getFormattedOutput(script *config.Script, logger *slog.Logger, output strin
 		return ""
 	}
 
+	if script.Output.Format == "nagios" {
+		return parseNagiosOutput(script, logger, output)
+	}
+
 	var formattedOutput string
 
 	scanner := bufio.NewScanner(strings.NewReader(output))
@@ -359,4 +365,38 @@ func isValidOutput(script *config.Script, output string, logger *slog.Logger) bo
 	}
 
 	return true
+}
+
+func parseNagiosOutput(script *config.Script, logger *slog.Logger, output string) string {
+	nagiosParser := nagios.Parser{}
+	nagiosMetrics, err := nagiosParser.Parse([]byte(output))
+	if err != nil {
+		logger.Error("Error parsing Nagios output", slog.String("script", script.Name), slog.String("output", output), slog.Any("error", err))
+		return ""
+	}
+
+	collection := prometheusserializer.NewCollection(prometheusserializer.FormatConfig{
+		StringAsLabel:   true,
+		ExportTimestamp: false,
+	})
+
+	for _, metric := range nagiosMetrics {
+		collection.Add(metric, time.Now())
+	}
+
+	var formattedOutput string
+
+	prometheusMetrics := collection.GetProto()
+	for _, metric := range prometheusMetrics {
+		var buffer bytes.Buffer
+		encoder := expfmt.NewEncoder(&buffer, expfmt.NewFormat(expfmt.TypeTextPlain))
+		err := encoder.Encode(metric)
+		if err != nil {
+			logger.Error("Error encoding Prometheus metric", slog.String("script", script.Name), slog.Any("metric", metric), slog.Any("error", err))
+			continue
+		}
+		formattedOutput += buffer.String()
+	}
+
+	return formattedOutput
 }
