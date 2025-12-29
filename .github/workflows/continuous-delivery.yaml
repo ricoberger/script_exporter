@@ -5,18 +5,16 @@ on:
   push:
     branches:
       - main
-  pull_request:
-  release:
-    types:
-      - published
+    tags:
+      - v*
 
 jobs:
   binaries:
     name: Binaries
     runs-on: ubuntu-latest
-    if:
-      github.event_name == 'pull_request' || (github.event_name == 'release' &&
-      github.event.action == 'published')
+    if: startsWith(github.event.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     strategy:
       matrix:
         platform:
@@ -61,35 +59,15 @@ jobs:
             tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter
           fi
 
-      - name: Upload Artifact (PR)
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v5
-        with:
-          name:
-            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
-            }}.tar.gz
-          path:
-            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
-            }}.tar.gz
-          if-no-files-found: error
-
-      - name: Upload Artifact (Release)
-        uses: shogo82148/actions-upload-release-asset@v1
-        if:
-          ${{ github.event_name == 'release' && github.event.action ==
-          'published' }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path:
-            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch
-            }}.tar.gz
+      - name: Upload Artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
 
   docker:
     name: Docker
     runs-on: ubuntu-latest
-    if:
-      github.ref == 'refs/heads/main' || (github.event_name == 'release' &&
-      github.event.action == 'published')
     steps:
       - name: Checkout
         uses: actions/checkout@v6
