@@ -1,0 +1,74 @@
+/*
+Grafana Alloy Module for the script_exporter.
+
+Example Usage:
+
+import.git "script_exporter" {
+  repository = "https://github.com/ricoberger/script_exporter.git"
+  revision   = "main"
+  path       = "script_exporter.alloy"
+}
+
+prometheus.remote_write "local_prometheus" {
+  endpoint {
+    url = "http://localhost:9090/api/v1/write"
+  }
+}
+
+script_exporter.scrape_script "output" {
+  address    = "localhost:9469"
+  forward_to = [prometheus.remote_write.local_prometheus.receiver]
+
+  params = {
+    script = ["output"],
+  }
+}
+
+script_exporter.scrape_script "ping" {
+  address    = "localhost:9469"
+  forward_to = [prometheus.remote_write.local_prometheus.receiver]
+
+  params = {
+    script     = ["ping"],
+    pingtarget = ["example.com"],
+    params     = ["pingtarget"],
+  }
+}
+*/
+
+declare "scrape_script" {
+  argument "address" {
+    comment  = "The address of the script_exporter."
+    default  = "localhost:9469"
+    optional = true
+  }
+
+  argument "scrape_interval" {
+    comment  = "The Prometheus scrape interval."
+    default  = "60s"
+    optional = true
+  }
+
+  argument "scrape_timeout" {
+    comment  = "The Prometheus scrape timeout."
+    default  = "10s"
+    optional = true
+  }
+
+  argument "forward_to" {
+    comment = "A list of receivers, where scraped metrics are forwarded to."
+  }
+
+  argument "params" {
+    comment = "The parameters which should be used. Must contain a parameter named 'script', with the name of the script which should be executed."
+  }
+
+  prometheus.scrape "script" {
+    targets         = [{ __address__ = argument.address.value }]
+    metrics_path    = "/probe"
+    scrape_interval = argument.scrape_interval.value
+    scrape_timeout  = argument.scrape_timeout.value
+    forward_to      = argument.forward_to.value
+    params          = argument.params.value
+  }
+}
