@@ -4,13 +4,13 @@ go 1.25.5
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
-	github.com/goccy/go-yaml v1.19.0
+	github.com/goccy/go-yaml v1.19.1
 	github.com/influxdata/telegraf v1.37.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.4
 	github.com/prometheus/exporter-toolkit v0.15.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.39.0
 )
 
 require (
