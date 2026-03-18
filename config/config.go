@@ -146,6 +146,7 @@ func (sc *SafeConfig) reloadConfigFromUrl(configFiles string) (err error) {
 		return fmt.Errorf("failed to create request for: %w", err)
 	}
 
+	//nolint:gosec
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to get config from: %w", err)

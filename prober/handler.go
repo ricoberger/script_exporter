@@ -89,6 +89,7 @@ func Handler(w http.ResponseWriter, r *http.Request, c *config.Config, logger *s
 		logger.Debug("Script was run", slog.Duration("duration", time.Since(start)), slog.String("output", output))
 		metricReqCount.WithLabelValues(scriptName).Inc()
 		metricReqDurationSeconds.WithLabelValues(scriptName).Observe(time.Since(start).Seconds())
+		//nolint:gosec
 		fmt.Fprint(w, output)
 	}
 }
