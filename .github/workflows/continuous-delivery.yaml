@@ -59,6 +59,12 @@ jobs:
             tar -czf script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz script_exporter
           fi
 
+      - name: Generate Artifact Attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            script_exporter-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
+
       - name: Upload Artifact
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
