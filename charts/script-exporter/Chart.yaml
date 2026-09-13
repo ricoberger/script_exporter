@@ -5,5 +5,5 @@ description:
   Prometheus exporter to execute scripts and collect metrics from the output or
   the exit status.
 type: application
-version: 3.1.3
-appVersion: v3.2.1
+version: 3.1.4
+appVersion: v3.3.0
