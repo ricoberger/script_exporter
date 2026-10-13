@@ -5,7 +5,7 @@ RUN go mod download
 COPY . .
 RUN export CGO_ENABLED=0 && make build
 
-FROM alpine:3.24.1
+FROM alpine:3.24.2
 RUN apk add --no-cache --update bash curl jq ca-certificates tini python3
 RUN mkdir /script_exporter
 COPY --from=build /script_exporter/bin/script_exporter /script_exporter
